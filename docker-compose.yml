@@ -1,0 +1,396 @@
+version: '3'
+services:
+  #>> remove if you want to use a system-wide sslproxy
+  sslproxy:
+    # https://github.com/linuxserver/docker-swag
+    image: linuxserver/swag:version-1.15.0
+    environment:
+      - STAGING=false
+      - EMAIL=${SERVER_ADMIN}
+      - VALIDATION=http
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Berlin
+      - URL=${HOST}
+      # - SUBDOMAINS=wildcard
+      # - SUBDOMAINS=www,dev,staging,production
+    restart: unless-stopped
+    volumes:
+      - ./_data/sslproxy:/config
+      - ./sslproxy/nginx.conf:/config/nginx/site-confs/default
+    networks:
+      - informationgrid-network
+    ports:
+      - 443:443
+      - 80:80
+      # - 127.0.0.1:443:443
+      # - 127.0.0.1:80:80
+    cap_add:
+      - NET_ADMIN
+  #<<
+
+  mysql:
+    image: mysql:5.7
+    command: docker-entrypoint.sh mysqld --character-set-server=utf8 --lower-case-table-names=1 --collation-server=utf8_unicode_ci
+    environment:
+      - TZ=Europe/Berlin
+      - MYSQL_ROOT_HOST=%%
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+    restart: unless-stopped
+    volumes:
+      - ./_data/mysql:/var/lib/mysql
+      - ./init-db:/docker-entrypoint-initdb.d
+    networks:
+      - informationgrid-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    environment:
+      - TZ=Europe/Berlin
+      - PMA_ARBITRARY=1
+      - PMA_PMADB=phpmyadmin
+      - PMA_ABSOLUTE_URI=http://${HOST}/phpmyadmin/
+    restart: unless-stopped
+    networks:
+      - informationgrid-network
+
+  apache:
+    image: httpd:2.4.29
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Berlin
+    depends_on:
+      - portal
+    volumes:
+      - ./apache/passwdfile.ingrid:/usr/local/apache2/passwdfile.ingrid
+      - ./apache/httpd.conf:/usr/local/apache2/conf/httpd.conf
+      - ./apache/vhost.conf:/usr/local/apache2/conf/extra/ingrid.conf
+    # comment in if you want to replace the default sslproxy with a system-wide proxy
+    # ports:
+    #   - 127.0.0.1:12265:80
+    networks:
+      - informationgrid-network
+
+  codelist-repo:
+    image: docker-registry.wemove.com/ingrid-codelist-repository:latest
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Berlin
+      - forceUpdateCodelists=true
+    volumes:
+      - ./_data/logs/codelist-repo:/opt/ingrid/ingrid-codelist-repository/logs
+      - ./_data/codelist-repository:/opt/ingrid/ingrid-codelist-repository/data
+      - ./codelist-repository/realm.properties:/opt/ingrid/ingrid-codelist-repository/conf/realm.properties
+      # PATCHES MUST NOT BE MAPPED! NEW PATCHES WON'T BE EXECUTED! Use 'docker cp' if you must.
+      #- ./codelist-repository/patches:/opt/ingrid/ingrid-codelist-repository/patches
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    networks:
+      - informationgrid-network
+
+  elastic:
+    image: docker-registry.wemove.com/ingrid-elasticsearch-with-decompound:6.4.2
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Berlin
+      - cluster.name=ingrid
+      - http.host=0.0.0.0
+      - transport.host=0.0.0.0
+      - http.cors.enabled=true
+      - http.cors.allow-origin=*
+      - "ES_JAVA_OPTS=-Xms1G -Xmx1G"
+      - xpack.security.enabled=false
+      - xpack.monitoring.enabled=false
+      - xpack.ml.enabled=false
+    ulimits:
+      nofile:
+          soft: 65536
+          hard: 65536
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+    networks:
+      - informationgrid-network
+
+  ibus:
+    image: docker-registry.wemove.com/ingrid-ibus:latest
+    depends_on:
+      - elastic
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Berlin
+      - CODELIST_URL=http://codelist-repo:8080
+      - CODELIST_USERNAME=admin
+      - CODELIST_PASSWORD=${CODELIST_PASSWORD}
+      - IBUS_PASSWORD=${ADMIN_GUI_PASSWORD_HASH}
+      - JAVA_OPTS=-Xmx384m
+      - ELASTIC_HOSTS=elastic:9300
+    volumes:
+      - ./_data/logs/ibus:/opt/ingrid/ingrid-ibus/logs
+      - ./ibus/conf/activatedIplugs.properties:/opt/ingrid/ingrid-ibus/conf/activatedIplugs.properties
+      - ./ibus/conf/application-default.properties:/opt/ingrid/ingrid-ibus/conf/application-default.properties
+    ports:
+      - 127.0.0.1:12300:9900
+    command: ["sh", "wait-for-elasticsearch.sh", "elastic:9200", "/bin/sh start.sh start"]
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    networks:
+      - informationgrid-network
+
+  iplug-ige:
+    image: docker-registry.wemove.com/ingrid-iplug-ige:latest
+    depends_on:
+      - mysql
+      - portal
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Berlin
+      - INGRID_OPTS=-agentlib:jdwp=transport=dt_socket,address=7003,server=y,suspend=n
+    volumes:
+      - ./_data/logs/iplug-ige:/opt/ingrid/ingrid-iplug-ige/logs
+      - ./iplug-ige/config.override.properties:/opt/ingrid/ingrid-iplug-ige/conf/config.override.properties
+      - ./iplug-ige/pattern:/opt/ingrid/ingrid-iplug-ige/pattern
+      # Change index directory via elasticsearch.properties to collect all indices inside one volume
+      #- ./docker-files/elasticsearch.properties:/opt/ingrid/ingrid-iplug-ige/conf/elasticsearch.properties
+      #- index-volume:/opt/ingrid/ingrid-iplug-ige/index
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+    networks:
+      - informationgrid-network
+    command: ["bash", "wait-for-it.sh", "mysql:3306", "-t", "120", "--", "./run.sh"]
+
+  portal:
+    image: docker-registry.wemove.com/ingrid-portal:latest
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Berlin
+      - JAVA_OPTS=-DDB_PASSWORD="${MYSQL_ROOT_PASSWORD}" -Dfile.encoding=UTF8 -Xmx1g
+      - DB_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - DEBUG=true
+      - PORTAL_SERVER_CONNECTOR_ATTR=proxyPort="443" scheme="https" secure="true"
+    volumes:
+      - ./_data/logs/ingrid-portal:/opt/ingrid/ingrid-portal/apache-tomcat/logs
+      - ./_data/portal/upload:/tmp/ingrid/upload
+      - ./_data/portal/WebmapClientData:/opt/ingrid/WebmapClientData
+      # add some configurations inside the docker image!? those without database settings!
+      - ./portal/test_files:/opt/ingrid/ingrid-portal/apache-tomcat/webapps/ROOT/test_files
+      - ./portal/mdek.override.properties:/opt/ingrid/ingrid-portal/apache-tomcat/webapps/ingrid-portal-mdek-application/WEB-INF/classes/mdek.override.properties
+      - ./portal/ingrid-portal-apps.override.properties:/opt/ingrid/ingrid-portal/apache-tomcat/webapps/ingrid-portal-apps/WEB-INF/classes/ingrid-portal-apps.override.properties
+      - ./portal/application.override.properties:/opt/ingrid/ingrid-portal/apache-tomcat/webapps/ingrid-webmap-client/WEB-INF/classes/application.override.properties
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    networks:
+      - informationgrid-network
+    command: ["bash", "./wait-for-it.sh", "mysql:3306", "-t", "120", "--", "./run.sh"]
+
+  iplug-sns:
+    image: docker-registry.wemove.com/ingrid-iplug-sns:latest
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Berlin
+    volumes:
+      - ./_data/logs/sns:/opt/ingrid/ingrid-iplug-sns/logs
+      - ./iplug-sns/conf/config.override.properties:/opt/ingrid/ingrid-iplug-sns/conf/config.override.properties
+      - ./iplug-sns/conf/spring/external-services.xml:/opt/ingrid/ingrid-iplug-sns/conf/spring/external-services.xml
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    networks:
+      - informationgrid-network
+
+  iplug-xml:
+    image: docker-registry.wemove.com/ingrid-iplug-xml:latest
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Berlin
+    volumes:
+      - ./_data/logs/xml:/opt/ingrid/ingrid-iplug-xml/logs
+      - ./iplug-xml/conf/config.override.properties:/opt/ingrid/ingrid-iplug-xml/conf/config.override.properties
+      - ./iplug-xml/mapping:/opt/ingrid/ingrid-iplug-xml/mapping
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    networks:
+      - informationgrid-network
+
+  iplug-excel:
+    image: docker-registry.wemove.com/ingrid-iplug-excel:latest
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Berlin
+    volumes:
+      - ./_data/logs/excel:/opt/ingrid/ingrid-iplug-excel/logs
+      - ./iplug-excel/conf/config.override.properties:/opt/ingrid/ingrid-iplug-excel/conf/config.override.properties
+      - ./iplug-excel/mapping:/opt/ingrid/ingrid-iplug-excel/mapping
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    networks:
+      - informationgrid-network
+
+  iplug-opensearch:
+    image: docker-registry.wemove.com/ingrid-iplug-opensearch:latest
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Berlin
+    volumes:
+      - ./_data/logs/opensearch:/opt/ingrid/ingrid-iplug-opensearch/logs
+      - ./iplug-opensearch/conf/config.override.properties:/opt/ingrid/ingrid-iplug-opensearch/conf/config.override.properties
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    networks:
+      - informationgrid-network
+
+  iplug-dsc:
+    image: docker-registry.wemove.com/ingrid-iplug-dsc:latest
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Berlin
+    volumes:
+      - ./_data/logs/dsc:/opt/ingrid/ingrid-iplug-dsc/logs
+      - ./iplug-dsc/singleRecordBean.xml:/opt/ingrid/ingrid-iplug-dsc/webapp/WEB-INF/override/singleRecordBean.xml
+      - ./iplug-dsc/conf/mapping/igc_to_idf.js:/opt/ingrid/ingrid-iplug-dsc/conf/mapping/igc_to_idf.js
+      - ./iplug-dsc/conf/mapping/igc_to_idf_obj_dq.js:/opt/ingrid/ingrid-iplug-dsc/conf/mapping/igc_to_idf_obj_dq.js
+      - ./iplug-dsc/conf/mapping/igc_to_lucene.js:/opt/ingrid/ingrid-iplug-dsc/conf/mapping/igc_to_lucene.js
+      - ./iplug-dsc/conf/config.override.properties:/opt/ingrid/ingrid-iplug-dsc/conf/config.override.properties
+      - ./iplug-dsc/conf/elasticsearch.override.properties:/opt/ingrid/ingrid-iplug-dsc/conf/elasticsearch.override.properties
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    networks:
+      - informationgrid-network
+
+  iplug-se:
+    image: docker-registry.wemove.com/ingrid-iplug-se:latest
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Berlin
+      - NETWORK_HOST=elastic
+    volumes:
+      - ./_data/logs/se:/opt/ingrid/ingrid-iplug-se/logs
+      - ./_data/iplug-se/database:/opt/ingrid/ingrid-iplug-se/database
+      - ./_data/iplug-se/instances:/opt/ingrid/ingrid-iplug-se/instances
+      - ./_data/iplug-se/elastic-search-data:/opt/ingrid/ingrid-iplug-se/elastic-search-data
+      - ./iplug-se/conf/config.override.properties:/opt/ingrid/ingrid-iplug-se/conf/config.override.properties
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+    networks:
+      - informationgrid-network
+
+  # name must not be the same as the apache context path!!!
+  ingrid-server-opensearch:
+    image: docker-registry.wemove.com/ingrid-server-opensearch:latest
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Berlin
+    volumes:
+      - ./_data/logs/opensearch:/opt/ingrid/ingrid-server-opensearch/logs
+      - ./server-opensearch/ingrid-opensearch.properties:/opt/ingrid/ingrid-server-opensearch/conf/ingrid-opensearch.properties
+      - ./server-opensearch/plugdescription.xml:/opt/ingrid/ingrid-server-opensearch/conf/plugdescription.xml
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    networks:
+      - informationgrid-network
+
+  interface-csw:
+    image: docker-registry.wemove.com/ingrid-interface-csw:latest
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Berlin
+    volumes:
+      - ./_data/logs/interface-csw:/opt/ingrid/ingrid-interface-csw/logs
+      - ./_data/interface-csw/instances:/opt/ingrid/ingrid-interface-csw/instances
+      - ./interface-csw/conf/config.override.properties:/opt/ingrid/ingrid-interface-csw/conf/config.override.properties
+      - ./interface-csw/conf/csw-t.realm.properties:/opt/ingrid/ingrid-interface-csw/conf/csw-t.realm.properties
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+    networks:
+      - informationgrid-network
+
+  interface-search:
+    image: docker-registry.wemove.com/ingrid-interface-search:latest
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Berlin
+    volumes:
+      - ./_data/logs/interface-search:/opt/ingrid/ingrid-interface-search/logs
+      - ./interface-search/interface-search.properties:/opt/ingrid/ingrid-interface-search/conf/interface-search.properties
+      - ./interface-search/descriptor.xml:/opt/ingrid/ingrid-interface-search/conf/descriptor.xml
+      - ./interface-search/communication.xml:/opt/ingrid/ingrid-interface-search/conf/communication.xml
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    networks:
+      - informationgrid-network
+
+  iplug-csw:
+    image: docker-registry.wemove.com/ingrid-iplug-csw-dsc:latest
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Berlin
+    volumes:
+      - ./_data/logs/csw-dsc:/opt/ingrid/ingrid-iplug-csw-dsc/logs
+      - ./iplug-csw/conf/config.override.properties:/opt/ingrid/ingrid-iplug-csw-dsc/conf/config.override.properties
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    networks:
+      - informationgrid-network
+
+  iplug-wfs:
+    image: docker-registry.wemove.com/ingrid-iplug-wfs-dsc:latest
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Berlin
+    volumes:
+      - ./_data/logs/wfs-dsc:/opt/ingrid/ingrid-iplug-wfs-dsc/logs
+      - ./iplug-wfs/conf/config.override.properties:/opt/ingrid/ingrid-iplug-wfs-dsc/conf/config.override.properties
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    networks:
+      - informationgrid-network
+
+  iplug-wfs-zdm:
+    image: docker-registry.wemove.com/ingrid-iplug-wfs-dsc:latest
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Berlin
+    volumes:
+      - ./_data/logs/wfs-dsc:/opt/ingrid/ingrid-iplug-wfs-dsc/logs
+      - ./iplug-wfs-zdm/conf/config.override.properties:/opt/ingrid/ingrid-iplug-wfs-dsc/conf/config.override.properties
+      - ./iplug-wfs-zdm/conf/spring/spring.xml:/opt/ingrid/ingrid-iplug-wfs-dsc/webapp/WEB-INF/spring.xml
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    networks:
+      - informationgrid-network
+
+networks:
+  informationgrid-network:
+    driver: "bridge"
