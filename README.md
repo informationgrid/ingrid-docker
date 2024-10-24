@@ -25,7 +25,10 @@ openssl req -x509 -newkey rsa:4096 \
 # copy initial sample webmapclient data
 cp -r portal/WebmapClientData.test/* _data/portal/WebmapClientData
 
-# the ingrid containers run with UID 1000
+# create empty directory for Postgres Database
+mkdir ./_data/postgres-db
+
+# the ingrid containers and elastic container run with UID 1000
 sudo chown -R 1000:1000 ./_data
 
 # increase memory for elastic; if you don't do this, elastic won't even boot because it checks for a sane value
