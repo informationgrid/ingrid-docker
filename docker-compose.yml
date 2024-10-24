@@ -1,9 +1,9 @@
-version: '3'
 services:
   #>> remove if you want to use a system-wide sslproxy
   sslproxy:
     # https://github.com/linuxserver/docker-swag
-    image: linuxserver/swag:version-1.15.0
+    #image: linuxserver/swag:version-1.15.0
+    image: linuxserver/swag:latest
     environment:
       - STAGING=false
       - EMAIL=${SERVER_ADMIN}
@@ -17,45 +17,40 @@ services:
     restart: unless-stopped
     volumes:
       - ./_data/sslproxy:/config
-      - ./sslproxy/nginx.conf:/config/nginx/site-confs/default
+      - ./sslproxy/nginx.conf:/config/nginx/site-confs/default.conf
     networks:
       - informationgrid-network
     ports:
       - 443:443
       - 80:80
-      # - 127.0.0.1:443:443
-      # - 127.0.0.1:80:80
+    #  - 127.0.0.1:443:443
+    #  - 127.0.0.1:80:80
     cap_add:
       - NET_ADMIN
   #<<
 
-  mysql:
-    image: mysql:5.7
-    command: docker-entrypoint.sh mysqld --character-set-server=utf8 --lower-case-table-names=1 --collation-server=utf8_unicode_ci
-    environment:
-      - TZ=Europe/Berlin
-      - MYSQL_ROOT_HOST=%%
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+  postgres-db:
+    image: postgres:15.6
     restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_DB_ADMIN}
+      - POSTGRES_PASSWORD=${POSTGRES_DB_PASSWORD}
     volumes:
-      - ./_data/mysql:/var/lib/mysql
-      - ./init-db:/docker-entrypoint-initdb.d
+      - ./_data/postgres-db/:/var/lib/postgresql/data
+      - ./_data/init-db:/docker-entrypoint-initdb.d
     networks:
       - informationgrid-network
 
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    environment:
-      - TZ=Europe/Berlin
-      - PMA_ARBITRARY=1
-      - PMA_PMADB=phpmyadmin
-      - PMA_ABSOLUTE_URI=http://${HOST}/phpmyadmin/
+  adminer:
+    image: adminer
     restart: unless-stopped
+    environment:
+      - ADMINER_DEFAULT_DB_DRIVER=pgsql
     networks:
       - informationgrid-network
 
   apache:
-    image: httpd:2.4.29
+    image: httpd:2.4
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -66,21 +61,21 @@ services:
       - ./apache/httpd.conf:/usr/local/apache2/conf/httpd.conf
       - ./apache/vhost.conf:/usr/local/apache2/conf/extra/ingrid.conf
     # comment in if you want to replace the default sslproxy with a system-wide proxy
-    # ports:
-    #   - 127.0.0.1:12265:80
+    #ports:
+       #- 127.0.0.1:80:80
     networks:
       - informationgrid-network
 
   codelist-repo:
-    image: docker-registry.wemove.com/ingrid-codelist-repository:latest
+    image: docker-registry.wemove.com/ingrid-codelist-repository:7.3.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
       - forceUpdateCodelists=true
+      - CREDENTIALS_ADMIN=admin=>${CODELIST_PASSWORD}
     volumes:
       - ./_data/logs/codelist-repo:/opt/ingrid/ingrid-codelist-repository/logs
       - ./_data/codelist-repository:/opt/ingrid/ingrid-codelist-repository/data
-      - ./codelist-repository/realm.properties:/opt/ingrid/ingrid-codelist-repository/conf/realm.properties
       # PATCHES MUST NOT BE MAPPED! NEW PATCHES WON'T BE EXECUTED! Use 'docker cp' if you must.
       #- ./codelist-repository/patches:/opt/ingrid/ingrid-codelist-repository/patches
     deploy:
@@ -91,7 +86,7 @@ services:
       - informationgrid-network
 
   elastic:
-    image: docker-registry.wemove.com/ingrid-elasticsearch-with-decompound:6.4.2
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.14.1
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -99,15 +94,22 @@ services:
       - http.host=0.0.0.0
       - transport.host=0.0.0.0
       - http.cors.enabled=true
-      - http.cors.allow-origin=*
-      - "ES_JAVA_OPTS=-Xms1G -Xmx1G"
+      - "ES_JAVA_OPTS=-Xmx4g -Dlog4j2.formatMsgNoLookups=true"
+      - "LOG4J_FORMAT_MSG_NO_LOOKUPS=true"
       - xpack.security.enabled=false
-      - xpack.monitoring.enabled=false
       - xpack.ml.enabled=false
-    ulimits:
-      nofile:
-          soft: 65536
-          hard: 65536
+      - discovery.type=single-node
+      - ingest.geoip.downloader.enabled=false
+      - cluster.routing.allocation.disk.threshold_enabled=false
+      
+      # make esdata directory writable to container process
+      # to obtain the user 'exec bash' into container
+      # the adapt the rights of esdata
+      # mkdir -p elastic/_data/esdata
+      # chown 1000 elastic/_data/esdata
+    volumes:  
+      - ./_data/elasticsearch_data:/usr/share/elasticsearch/data
+    
     deploy:
       resources:
         limits:
@@ -116,7 +118,7 @@ services:
       - informationgrid-network
 
   ibus:
-    image: docker-registry.wemove.com/ingrid-ibus:latest
+    image: docker-registry.wemove.com/ingrid-ibus:7.3.0
     depends_on:
       - elastic
     restart: unless-stopped
@@ -127,55 +129,116 @@ services:
       - CODELIST_PASSWORD=${CODELIST_PASSWORD}
       - IBUS_PASSWORD=${ADMIN_GUI_PASSWORD_HASH}
       - JAVA_OPTS=-Xmx384m
-      - ELASTIC_HOSTS=elastic:9300
+      - ELASTIC_HOSTS=elastic:9200
     volumes:
       - ./_data/logs/ibus:/opt/ingrid/ingrid-ibus/logs
       - ./ibus/conf/activatedIplugs.properties:/opt/ingrid/ingrid-ibus/conf/activatedIplugs.properties
       - ./ibus/conf/application-default.properties:/opt/ingrid/ingrid-ibus/conf/application-default.properties
-    ports:
-      - 127.0.0.1:12300:9900
+    #ports:
+    #  - 127.0.0.1:12300:9900
     command: ["sh", "wait-for-elasticsearch.sh", "elastic:9200", "/bin/sh start.sh start"]
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 512M
     networks:
       - informationgrid-network
 
-  iplug-ige:
-    image: docker-registry.wemove.com/ingrid-iplug-ige:latest
-    depends_on:
-      - mysql
-      - portal
+  ige-ng:
+    image: docker-registry.wemove.com/ingrid-ige-ng:latest
+   # Workaround build to deploy locally. Not neccessary if using CA's which are already in the JVM Truststore
+   #build:
+   #  context: ./ige-ng/build
+   #  args: 
+   #    - IGE_NG_VERSION=7.3.2
+   #    - CERT_FILE_NAME_1=fullchain.pem
+   #    - CERT_FILE_NAME_2=privkey.pem
     restart: unless-stopped
+    depends_on:
+      - postgres-db
+    user: "1000:1000"
     environment:
       - TZ=Europe/Berlin
-      - INGRID_OPTS=-agentlib:jdwp=transport=dt_socket,address=7003,server=y,suspend=n
-    volumes:
-      - ./_data/logs/iplug-ige:/opt/ingrid/ingrid-iplug-ige/logs
-      - ./iplug-ige/config.override.properties:/opt/ingrid/ingrid-iplug-ige/conf/config.override.properties
-      - ./iplug-ige/pattern:/opt/ingrid/ingrid-iplug-ige/pattern
-      # Change index directory via elasticsearch.properties to collect all indices inside one volume
-      #- ./docker-files/elasticsearch.properties:/opt/ingrid/ingrid-iplug-ige/conf/elasticsearch.properties
-      #- index-volume:/opt/ingrid/ingrid-iplug-ige/index
-    deploy:
-      resources:
-        limits:
-          memory: 768M
+      - CONTEXT_PATH=/ige-ng
+      - BROKER_URL=wss://${HOST}/ige-ng/ws
+      - _JAVA_OPTIONS=-Xmx2g -Dstorage.diskCache.bufferSize=256 -Dspring.profiles.active=elasticsearch,ingrid,ibus,codelist-repo
+      #- JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8699
+      #- KEYCLOAK_CLIENT_ID=ige-ng
+      - DATABASE_HOST=postgres-db
+      - DATABASE_USERNAME=${POSTGRES_DB_ADMIN}
+      - DATABASE_PASSWORD=${POSTGRES_DB_PASSWORD}
+      - KEYCLOAK_URL=http://keycloak:8080/keycloak
+      - KEYCLOAK_URL_FRONTEND=http://${HOST}/keycloak
+      - CODELIST_REPO_URL=http://codelist-repo:8080
+      - CODELIST_REPO_USER=admin
+      - CODELIST_REPO_PASSWORD=${CODELIST_PASSWORD}
+      - APP_HOST_URL=http://${HOST}/ige-ng
+      - WAIT_FOR_PARAM=postgres-db:5432
+      - MAIL_FROM=
+      - KEYCLOAK_BACKEND_USER=ige
+      - KEYCLOAK_BACKEND_USER_PASSWORD=admin
+      - SHOW_SWAGGER_UI=true
+  #  ports:
+  #    - "8699:8699"
+      #- "8083:80"
     networks:
       - informationgrid-network
-    command: ["bash", "wait-for-it.sh", "mysql:3306", "-t", "120", "--", "./run.sh"]
+    volumes:
+      - ./ige-ng/application-ingrid.properties:/app/resources/application-ingrid.properties
+      - ./_data/ige-ng/upload:/tmp/ingrid/upload-ige-ng
+      - ./ige-ng/codelists:/codelists
+
+  keycloak:
+    image: docker-registry.wemove.com/keycloak:24.0.5-1
+    restart: unless-stopped
+    environment:
+      - SIMPLE_SECURITY=true
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_HTTP_RELATIVE_PATH=/keycloak
+      - KC_HOSTNAME=
+      - KC_HOSTNAME_URL=http://${HOST}/keycloak
+     #- KC_PROXY=edge
+      - KC_HTTP_ENABLED=true
+      - KC_HOSTNAME_STRICT_HTTPS=false
+      - KC_DB=postgres
+      - KC_DB_URL_HOST=postgres-db
+      - KC_DB_USERNAME=${POSTGRES_DB_ADMIN}
+      - KC_DB_PASSWORD=${POSTGRES_DB_PASSWORD}
+      - MAIL_SMTP=mailrelay
+      - MAIL_FROM=
+     #- IGE_CLIENT_ID=ige-ng
+     #- IGE_FRONTEND_URL=http://${HOST}/ige-ng
+     # - IGE_CLIENT_REDIRECT_URI=
+      - IGE_SUPER_USER_LOGIN=ige
+      - IGE_SUPER_USER_PASSWORD=admin
+      - IGE_SUPER_USER_FIRSTNAME=Super
+      - IGE_SUPER_USER_LASTNAME=User
+      - IGE_SUPER_USER_EMAIL=
+      #- ORGANIZATION="${HOST} Ministerium für Umwelt, Energie und Klimaschutz"
+      #- IMPRINT_URL=http://${HOST}/impressum
+      #- PRIVACY_NOTE_URL=http://${HOST}/datenschutzbestimmung
+      # - ADDITIONAL_REDIRECT_URIS=http://localhost:4300/*
+
+    networks:
+      - informationgrid-network
+
 
   portal:
-    image: docker-registry.wemove.com/ingrid-portal:latest
+    image: docker-registry.wemove.com/ingrid-portal:7.3.2.1
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
-      - JAVA_OPTS=-DDB_PASSWORD="${MYSQL_ROOT_PASSWORD}" -Dfile.encoding=UTF8 -Xmx1g
-      - DB_PASSWORD=${MYSQL_ROOT_PASSWORD}
-      - DEBUG=true
+      - JAVA_OPTS=-Dfile.encoding=UTF8
+      - DB_URL_PORTAL=jdbc:postgresql://postgres-db:5432/ingrid_portal
+      - DB_URL_MDEK=jdbc:postgresql://postgres-db:5432/mdek
+      - DB_DRIVERCLASS=org.postgresql.Driver
+      - DB_DIALECT=org.hibernate.dialect.PostgreSQLDialect
+      - DB_USER=${POSTGRES_DB_ADMIN}
+      - DB_PASSWORD=${POSTGRES_DB_PASSWORD}
+      - QUARTZ_DRIVERCLASS=org.quartz.impl.jdbcjobstore.PostgreSQLDelegate
       # enable/disable IGE web application in portal container
-      - IGE_DISABLED=false
+      - IGE_DISABLED=true
       - PORTAL_SERVER_CONNECTOR_ATTR=proxyPort="443" scheme="https" secure="true"
     volumes:
       - ./_data/logs/ingrid-portal:/opt/ingrid/ingrid-portal/apache-tomcat/logs
@@ -192,10 +255,28 @@ services:
           memory: 512M
     networks:
       - informationgrid-network
-    command: ["bash", "./wait-for-it.sh", "mysql:3306", "-t", "120", "--", "./run.sh"]
+    command: ["bash", "./wait-for-it.sh", "postgres-db:5432", "-t", "120", "--", "./run.sh"]
+
+  mailrelay:
+    image: simenduev/postfix-relay:1.4.0
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Berlin
+      - SMTP_HOST=
+      - SMTP_PORT=587
+      - SMTP_LOGIN=
+      - SMTP_PASSWORD=
+      - ACCEPTED_NETWORKS=192.168.0.0/16 172.16.0.0/12 10.0.0.0/8
+      - USE_TLS=yes
+    logging:
+      driver: journald
+      options:
+        tag: "docker {{.Name}}"
+    networks:
+      - informationgrid-network
 
   iplug-sns:
-    image: docker-registry.wemove.com/ingrid-iplug-sns:latest
+    image: docker-registry.wemove.com/ingrid-iplug-sns:7.3.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -210,40 +291,8 @@ services:
     networks:
       - informationgrid-network
 
-  iplug-xml:
-    image: docker-registry.wemove.com/ingrid-iplug-xml:latest
-    restart: unless-stopped
-    environment:
-      - TZ=Europe/Berlin
-    volumes:
-      - ./_data/logs/xml:/opt/ingrid/ingrid-iplug-xml/logs
-      - ./iplug-xml/conf/config.override.properties:/opt/ingrid/ingrid-iplug-xml/conf/config.override.properties
-      - ./iplug-xml/mapping:/opt/ingrid/ingrid-iplug-xml/mapping
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-    networks:
-      - informationgrid-network
-
-  iplug-excel:
-    image: docker-registry.wemove.com/ingrid-iplug-excel:latest
-    restart: unless-stopped
-    environment:
-      - TZ=Europe/Berlin
-    volumes:
-      - ./_data/logs/excel:/opt/ingrid/ingrid-iplug-excel/logs
-      - ./iplug-excel/conf/config.override.properties:/opt/ingrid/ingrid-iplug-excel/conf/config.override.properties
-      - ./iplug-excel/mapping:/opt/ingrid/ingrid-iplug-excel/mapping
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-    networks:
-      - informationgrid-network
-
   iplug-opensearch:
-    image: docker-registry.wemove.com/ingrid-iplug-opensearch:latest
+    image: docker-registry.wemove.com/ingrid-iplug-opensearch:7.3.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -257,28 +306,8 @@ services:
     networks:
       - informationgrid-network
 
-  iplug-dsc:
-    image: docker-registry.wemove.com/ingrid-iplug-dsc:latest
-    restart: unless-stopped
-    environment:
-      - TZ=Europe/Berlin
-    volumes:
-      - ./_data/logs/dsc:/opt/ingrid/ingrid-iplug-dsc/logs
-      - ./iplug-dsc/singleRecordBean.xml:/opt/ingrid/ingrid-iplug-dsc/webapp/WEB-INF/override/singleRecordBean.xml
-      - ./iplug-dsc/conf/mapping/igc_to_idf.js:/opt/ingrid/ingrid-iplug-dsc/conf/mapping/igc_to_idf.js
-      - ./iplug-dsc/conf/mapping/igc_to_idf_obj_dq.js:/opt/ingrid/ingrid-iplug-dsc/conf/mapping/igc_to_idf_obj_dq.js
-      - ./iplug-dsc/conf/mapping/igc_to_lucene.js:/opt/ingrid/ingrid-iplug-dsc/conf/mapping/igc_to_lucene.js
-      - ./iplug-dsc/conf/config.override.properties:/opt/ingrid/ingrid-iplug-dsc/conf/config.override.properties
-      - ./iplug-dsc/conf/elasticsearch.override.properties:/opt/ingrid/ingrid-iplug-dsc/conf/elasticsearch.override.properties
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-    networks:
-      - informationgrid-network
-
   iplug-se:
-    image: docker-registry.wemove.com/ingrid-iplug-se:latest
+    image: docker-registry.wemove.com/ingrid-iplug-se:7.3.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -296,25 +325,8 @@ services:
     networks:
       - informationgrid-network
 
-  # name must not be the same as the apache context path!!!
-  ingrid-server-opensearch:
-    image: docker-registry.wemove.com/ingrid-server-opensearch:latest
-    restart: unless-stopped
-    environment:
-      - TZ=Europe/Berlin
-    volumes:
-      - ./_data/logs/opensearch:/opt/ingrid/ingrid-server-opensearch/logs
-      - ./server-opensearch/ingrid-opensearch.properties:/opt/ingrid/ingrid-server-opensearch/conf/ingrid-opensearch.properties
-      - ./server-opensearch/plugdescription.xml:/opt/ingrid/ingrid-server-opensearch/conf/plugdescription.xml
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-    networks:
-      - informationgrid-network
-
   interface-csw:
-    image: docker-registry.wemove.com/ingrid-interface-csw:latest
+    image: docker-registry.wemove.com/ingrid-interface-csw:7.3.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -331,7 +343,7 @@ services:
       - informationgrid-network
 
   interface-search:
-    image: docker-registry.wemove.com/ingrid-interface-search:latest
+    image: docker-registry.wemove.com/ingrid-interface-search:7.3.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -348,7 +360,7 @@ services:
       - informationgrid-network
 
   iplug-csw:
-    image: docker-registry.wemove.com/ingrid-iplug-csw-dsc:latest
+    image: docker-registry.wemove.com/ingrid-iplug-csw-dsc:7.3.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -363,7 +375,7 @@ services:
       - informationgrid-network
 
   iplug-wfs:
-    image: docker-registry.wemove.com/ingrid-iplug-wfs-dsc:latest
+    image: docker-registry.wemove.com/ingrid-iplug-wfs-dsc:7.3.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -378,7 +390,7 @@ services:
       - informationgrid-network
 
   iplug-wfs-zdm:
-    image: docker-registry.wemove.com/ingrid-iplug-wfs-dsc:latest
+    image: docker-registry.wemove.com/ingrid-iplug-wfs-dsc:7.3.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin

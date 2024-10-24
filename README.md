@@ -1,6 +1,9 @@
 # InGrid Sample Installation
 
-Clone this repository and open a shell in it. The setup works on localhost or on a remote machine. It also works in wsl 2 (tested with Alpine WSL). If you're on a remote, you have to change the HOST-variable, see section *Change Host*. This setup may cause problems if you're on a mac, see section *Remarks for Mac Users*.
+This installation is not for production. It intended use is to get an impression of the functionality.
+This README covers only configuration for a local test case. The Editor (and Keycloak) require additional configuration to make this services production ready.
+
+Clone this repository and open a shell in it. The setup works on localhost or on a remote machine. If you're on a remote, you have to change the HOST-variable, see section *Change Host*. This setup may cause problems if you're on a mac, see section *Remarks for Mac Users*.
 
 ```sh
 # Use the provided sample .env file.
@@ -32,8 +35,8 @@ sudo sysctl -w vm.max_map_count=262144
 
 # The installation uses docker images from a non-public docker registry. You can also build your own images by following the instructions in the specific ingrid repositories.
 sudo docker login -u readonly docker-registry.wemove.com # password "readonly"
-sudo docker-compose up -d
-sudo docker-compose ps
+sudo docker compose up -d
+sudo docker compose ps
 ```
 
 Open the portal at https://ingrid.localhost and accept the self-signed certificate warning. The services need some time to index the sample data, so they may be inaccessible for about a minute or two.
@@ -44,12 +47,11 @@ The default installation includes all optional plugins. To disable them, comment
 
 Modify the default configuration via the components' admin-guis. The urls for them are:
 
+* <http://ingrid.localhost/ige-ng> : http login ige:admin
+* <http://ingrid.localhost/keycloak> : http login admin:admin
 * <https://ingrid.localhost/codelist-repo> : http login admin:admin
-* <https://ingrid.localhost/phpmyadmin> : http login admin:admin, mysql:root:admin
-* <https://ingrid.localhost/ibus-gui/login?error> : http login admin:admin, ibus login admin:admin
-* <https://ingrid.localhost/iplug-admin-ige/> : admin:admin
-* <https://ingrid.localhost/iplug-admin-excel/> : admin:admin
-* <https://ingrid.localhost/iplug-admin-xml/> : admin:admin
+* <https://ingrid.localhost/adminer> : http login admin:admin, postgres-db:postgres:postgres
+* <https://ingrid.localhost/ibus-gui/r> : http login admin:admin, ibus login admin:admin
 * <https://ingrid.localhost/iplug-admin-sns/> : admin:admin
 * <https://ingrid.localhost/iplug-admin-opensearch/> : admin:admin
 * <https://ingrid.localhost/iplug-admin-wfs-dsc/> : admin:admin
@@ -139,13 +141,15 @@ sed -i "" "s/ingrid.localhost/$HOST/g" \
 If you updated the host-setting afterwards, update your setup with:
 
 ```sh
-# update containers with changed docker-compose arguments (.env has changed)
-sudo docker-compose up -d
+# update containers with changed docker compose arguments (.env has changed)
+sudo docker compose up -d
 # update containers with changed settings files
-sudo docker-compose restart
+sudo docker compose restart
 ```
 
 ## Remarks
+
+In this configuration the Editor and the Keycloak require to be called with http:// /and not https://)
 
 Some pages of the portal are secured via http-auth as defined in `./apache/passwdfile.ingrid` and in `.apache/vhost.conf`. The default logins are admin/admin and ingrid/ingrid. The logins for all iplugs are also admin/admin as default.
 
@@ -163,9 +167,9 @@ Our last test-run on mac with docker-for-mac installed had issues with mysql and
 
 ### Database
 
-Change property `MYSQL_ROOT_PASSWORD` in file `.env`.
+Change property `OSTGRES_DB_PASSWORD` in file `.env`.
 
-Change property `iplug.database.password` in files `iplug-dsc/conf/config.override.properties` and `iplug-ige/config.override.properties`.
+Change property `iplug.database.password` in files `iplug-dsc/conf/config.override.properties` and environment variable of `ige-ng` and `keycloak`.
 
 ### Codelist
 
@@ -215,8 +219,8 @@ and replace the content of file `apache/passwdfile.ingrid` with the line `yourus
 After changing your passwords, run:
 
 ```sh
-# update containers with changed docker-compose arguments (.env has changed)
-sudo docker-compose up -d
+# update containers with changed docker compose arguments (.env has changed)
+sudo docker compose up -d
 # update containers with changed settings files
-sudo docker-compose restart
+sudo docker compose restart
 ```
