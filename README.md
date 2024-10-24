@@ -170,7 +170,7 @@ Our last test-run on mac with docker-for-mac installed had issues with mysql and
 
 ### Database
 
-Change property `OSTGRES_DB_PASSWORD` in file `.env`.
+Change property `POSTGRES_DB_PASSWORD` in file `.env`.
 
 Change property `iplug.database.password` in files `iplug-dsc/conf/config.override.properties` and environment variable of `ige-ng` and `keycloak`.
 
