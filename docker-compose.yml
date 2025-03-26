@@ -67,7 +67,7 @@ services:
       - informationgrid-network
 
   codelist-repo:
-    image: docker-registry.wemove.com/ingrid-codelist-repository:7.3.0
+    image: docker-registry.wemove.com/ingrid-codelist-repository:7.5.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -118,7 +118,7 @@ services:
       - informationgrid-network
 
   ibus:
-    image: docker-registry.wemove.com/ingrid-ibus:7.3.0
+    image: docker-registry.wemove.com/ingrid-ibus:7.5.0
     depends_on:
       - elastic
     restart: unless-stopped
@@ -145,7 +145,7 @@ services:
       - informationgrid-network
 
   ige-ng:
-    image: docker-registry.wemove.com/ingrid-ige-ng:latest
+    image: docker-registry.wemove.com/ingrid-ige-ng:7.5.0
    # Workaround build to deploy locally. Not neccessary if using CA's which are already in the JVM Truststore
    #build:
    #  context: ./ige-ng/build
@@ -189,18 +189,18 @@ services:
       - ./ige-ng/codelists:/codelists
 
   keycloak:
-    image: docker-registry.wemove.com/keycloak:24.0.5-1
+    image: docker-registry.wemove.com/keycloak:26.0.5-1
     restart: unless-stopped
     environment:
       - SIMPLE_SECURITY=true
-      - KEYCLOAK_ADMIN=admin
-      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_BOOTSTRAP_ADMIN_USERNAME=admin
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
       - KC_HTTP_RELATIVE_PATH=/keycloak
-      - KC_HOSTNAME=
-      - KC_HOSTNAME_URL=http://${HOST}/keycloak
+      - KC_HOSTNAME=http://${HOST}/keycloak
      #- KC_PROXY=edge
       - KC_HTTP_ENABLED=true
-      - KC_HOSTNAME_STRICT_HTTPS=false
+      - KC_PROXY_HEADERS=xforwarded
+        #- KC_HOSTNAME_STRICT_HTTPS=false
       - KC_DB=postgres
       - KC_DB_URL_HOST=postgres-db
       - KC_DB_USERNAME=${POSTGRES_DB_ADMIN}
@@ -225,7 +225,7 @@ services:
 
 
   portal:
-    image: docker-registry.wemove.com/ingrid-portal:7.3.2.1
+    image: docker-registry.wemove.com/ingrid-portal:7.5.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -276,7 +276,7 @@ services:
       - informationgrid-network
 
   iplug-sns:
-    image: docker-registry.wemove.com/ingrid-iplug-sns:7.3.0
+    image: docker-registry.wemove.com/ingrid-iplug-sns:7.5.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -292,7 +292,7 @@ services:
       - informationgrid-network
 
   iplug-opensearch:
-    image: docker-registry.wemove.com/ingrid-iplug-opensearch:7.3.0
+    image: docker-registry.wemove.com/ingrid-iplug-opensearch:7.4.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -307,7 +307,7 @@ services:
       - informationgrid-network
 
   iplug-se:
-    image: docker-registry.wemove.com/ingrid-iplug-se:7.3.0
+    image: docker-registry.wemove.com/ingrid-iplug-se:7.5.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -326,7 +326,7 @@ services:
       - informationgrid-network
 
   interface-csw:
-    image: docker-registry.wemove.com/ingrid-interface-csw:7.3.0
+    image: docker-registry.wemove.com/ingrid-interface-csw:7.5.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -343,7 +343,7 @@ services:
       - informationgrid-network
 
   interface-search:
-    image: docker-registry.wemove.com/ingrid-interface-search:7.3.0
+    image: docker-registry.wemove.com/ingrid-interface-search:7.5.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -360,7 +360,7 @@ services:
       - informationgrid-network
 
   iplug-csw:
-    image: docker-registry.wemove.com/ingrid-iplug-csw-dsc:7.3.0
+    image: docker-registry.wemove.com/ingrid-iplug-csw-dsc:7.5.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -375,7 +375,7 @@ services:
       - informationgrid-network
 
   iplug-wfs:
-    image: docker-registry.wemove.com/ingrid-iplug-wfs-dsc:7.3.0
+    image: docker-registry.wemove.com/ingrid-iplug-wfs-dsc:7.5.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -390,7 +390,7 @@ services:
       - informationgrid-network
 
   iplug-wfs-zdm:
-    image: docker-registry.wemove.com/ingrid-iplug-wfs-dsc:7.3.0
+    image: docker-registry.wemove.com/ingrid-iplug-wfs-dsc:7.5.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
