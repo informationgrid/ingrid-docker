@@ -276,7 +276,7 @@ services:
       - informationgrid-network
 
   iplug-sns:
-    image: docker-registry.wemove.com/ingrid-iplug-sns:7.5.0
+    image: docker-registry.wemove.com/ingrid-iplug-sns:7.5.2
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
