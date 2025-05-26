@@ -118,7 +118,7 @@ services:
       - informationgrid-network
 
   ibus:
-    image: docker-registry.wemove.com/ingrid-ibus:7.5.0
+    image: docker-registry.wemove.com/ingrid-ibus:7.5.2
     depends_on:
       - elastic
     restart: unless-stopped
@@ -145,7 +145,7 @@ services:
       - informationgrid-network
 
   ige-ng:
-    image: docker-registry.wemove.com/ingrid-ige-ng:7.5.1.1
+    image: docker-registry.wemove.com/ingrid-ige-ng:7.5.2
    # Workaround build to deploy locally. Not neccessary if using CA's which are already in the JVM Truststore
    #build:
    #  context: ./ige-ng/build
@@ -225,7 +225,7 @@ services:
 
 
   portal:
-    image: docker-registry.wemove.com/ingrid-portal:7.5.0
+    image: docker-registry.wemove.com/ingrid-portal:7.5.2
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
