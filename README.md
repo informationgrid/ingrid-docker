@@ -14,14 +14,6 @@ cp .env.sample .env
 # 127.0.0.1       ingrid.localhost
 HOST=ingrid.localhost
 
-# Only execute the following two commands if you run ingrid on your local machine. This will create a self-signed certificate for your localhost-domain.
-# Don't execute them on a remote server. There, a valid certificate will be automatically acquired from let's encrypt.
-mkdir -p ./_data/sslproxy/etc/letsencrypt/live/$HOST
-openssl req -x509 -newkey rsa:4096 \
-  -keyout ./_data/sslproxy/etc/letsencrypt/live/$HOST/privkey.pem \
-  -out ./_data/sslproxy/etc/letsencrypt/live/$HOST/fullchain.pem \
-  -nodes -days 30 -subj "/CN=*.$HOST/CN=$HOST"
-
 # copy initial sample webmapclient data
 cp -r portal/WebmapClientData.test/* _data/portal/WebmapClientData
 
@@ -37,7 +29,7 @@ sysctl vm.max_map_count
 sudo sysctl -w vm.max_map_count=262144
 
 # The installation uses docker images from a non-public docker registry. You can also build your own images by following the instructions in the specific ingrid repositories.
-sudo docker login -u readonly docker-registry.wemove.com # password "readonly"
+sudo docker login -u readonly -p readonly docker-registry.wemove.com > /dev/null # password "readonly"
 sudo docker compose up -d
 sudo docker compose ps
 ```
