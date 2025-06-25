@@ -1,34 +1,4 @@
 services:
-  #>> remove if you want to use a system-wide sslproxy
-  sslproxy:
-    # https://github.com/linuxserver/docker-swag
-    #image: linuxserver/swag:version-1.15.0
-    image: linuxserver/swag:latest
-    environment:
-      - STAGING=false
-      - EMAIL=${SERVER_ADMIN}
-      - VALIDATION=http
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Berlin
-      - URL=${HOST}
-      # - SUBDOMAINS=wildcard
-      # - SUBDOMAINS=www,dev,staging,production
-    restart: unless-stopped
-    volumes:
-      - ./_data/sslproxy:/config
-      - ./sslproxy/nginx.conf:/config/nginx/site-confs/default.conf
-    networks:
-      - informationgrid-network
-    ports:
-      - 443:443
-      - 80:80
-    #  - 127.0.0.1:443:443
-    #  - 127.0.0.1:80:80
-    cap_add:
-      - NET_ADMIN
-  #<<
-
   postgres-db:
     image: postgres:15.6
     restart: unless-stopped
@@ -49,20 +19,19 @@ services:
     networks:
       - informationgrid-network
 
-  apache:
-    image: httpd:2.4
+  nginx:
+    image: nginx:1.28
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
-    depends_on:
-      - portal
+      # nginx conf
+      - NGINX_HOST=${HOST}
     volumes:
-      - ./apache/passwdfile.ingrid:/usr/local/apache2/passwdfile.ingrid
-      - ./apache/httpd.conf:/usr/local/apache2/conf/httpd.conf
-      - ./apache/vhost.conf:/usr/local/apache2/conf/extra/ingrid.conf
-    # comment in if you want to replace the default sslproxy with a system-wide proxy
-    #ports:
-       #- 127.0.0.1:80:80
+      - ./nginx/auth:/etc/nginx/auth
+      - ./nginx/conf.d:/etc/nginx/templates
+      - ./ige-ng/upload:/tmp/ingrid/upload-ige-ng
+    ports:
+      - 80:80
     networks:
       - informationgrid-network
 
@@ -239,7 +208,7 @@ services:
       - QUARTZ_DRIVERCLASS=org.quartz.impl.jdbcjobstore.PostgreSQLDelegate
       # enable/disable IGE web application in portal container
       - IGE_DISABLED=true
-      - PORTAL_SERVER_CONNECTOR_ATTR=proxyPort="443" scheme="https" secure="true"
+      - PORTAL_SERVER_CONNECTOR_ATTR=proxyPort="80" scheme="http" secure="false"
     volumes:
       - ./_data/logs/ingrid-portal:/opt/ingrid/ingrid-portal/apache-tomcat/logs
       - ./_data/portal/upload:/tmp/ingrid/upload
@@ -291,40 +260,6 @@ services:
     networks:
       - informationgrid-network
 
-  iplug-opensearch:
-    image: docker-registry.wemove.com/ingrid-iplug-opensearch:7.4.0
-    restart: unless-stopped
-    environment:
-      - TZ=Europe/Berlin
-    volumes:
-      - ./_data/logs/opensearch:/opt/ingrid/ingrid-iplug-opensearch/logs
-      - ./iplug-opensearch/conf/config.override.properties:/opt/ingrid/ingrid-iplug-opensearch/conf/config.override.properties
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-    networks:
-      - informationgrid-network
-
-  iplug-se:
-    image: docker-registry.wemove.com/ingrid-iplug-se:7.5.0
-    restart: unless-stopped
-    environment:
-      - TZ=Europe/Berlin
-      - NETWORK_HOST=elastic
-    volumes:
-      - ./_data/logs/se:/opt/ingrid/ingrid-iplug-se/logs
-      - ./_data/iplug-se/database:/opt/ingrid/ingrid-iplug-se/database
-      - ./_data/iplug-se/instances:/opt/ingrid/ingrid-iplug-se/instances
-      - ./_data/iplug-se/elastic-search-data:/opt/ingrid/ingrid-iplug-se/elastic-search-data
-      - ./iplug-se/conf/config.override.properties:/opt/ingrid/ingrid-iplug-se/conf/config.override.properties
-    deploy:
-      resources:
-        limits:
-          memory: 768M
-    networks:
-      - informationgrid-network
-
   interface-csw:
     image: docker-registry.wemove.com/ingrid-interface-csw:7.5.0
     restart: unless-stopped
@@ -352,52 +287,6 @@ services:
       - ./interface-search/interface-search.properties:/opt/ingrid/ingrid-interface-search/conf/interface-search.properties
       - ./interface-search/descriptor.xml:/opt/ingrid/ingrid-interface-search/conf/descriptor.xml
       - ./interface-search/communication.xml:/opt/ingrid/ingrid-interface-search/conf/communication.xml
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-    networks:
-      - informationgrid-network
-
-  iplug-csw:
-    image: docker-registry.wemove.com/ingrid-iplug-csw-dsc:7.5.0
-    restart: unless-stopped
-    environment:
-      - TZ=Europe/Berlin
-    volumes:
-      - ./_data/logs/csw-dsc:/opt/ingrid/ingrid-iplug-csw-dsc/logs
-      - ./iplug-csw/conf/config.override.properties:/opt/ingrid/ingrid-iplug-csw-dsc/conf/config.override.properties
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-    networks:
-      - informationgrid-network
-
-  iplug-wfs:
-    image: docker-registry.wemove.com/ingrid-iplug-wfs-dsc:7.5.0
-    restart: unless-stopped
-    environment:
-      - TZ=Europe/Berlin
-    volumes:
-      - ./_data/logs/wfs-dsc:/opt/ingrid/ingrid-iplug-wfs-dsc/logs
-      - ./iplug-wfs/conf/config.override.properties:/opt/ingrid/ingrid-iplug-wfs-dsc/conf/config.override.properties
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-    networks:
-      - informationgrid-network
-
-  iplug-wfs-zdm:
-    image: docker-registry.wemove.com/ingrid-iplug-wfs-dsc:7.5.0
-    restart: unless-stopped
-    environment:
-      - TZ=Europe/Berlin
-    volumes:
-      - ./_data/logs/wfs-dsc:/opt/ingrid/ingrid-iplug-wfs-dsc/logs
-      - ./iplug-wfs-zdm/conf/config.override.properties:/opt/ingrid/ingrid-iplug-wfs-dsc/conf/config.override.properties
-      - ./iplug-wfs-zdm/conf/spring/spring.xml:/opt/ingrid/ingrid-iplug-wfs-dsc/webapp/WEB-INF/spring.xml
     deploy:
       resources:
         limits:
