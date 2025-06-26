@@ -160,6 +160,8 @@ services:
   keycloak:
     image: docker-registry.wemove.com/keycloak:26.2.4-1
     restart: unless-stopped
+    depends_on:
+      - postgres-db
     environment:
       - SIMPLE_SECURITY=true
       - KC_BOOTSTRAP_ADMIN_USERNAME=admin
@@ -196,6 +198,8 @@ services:
   portal:
     image: docker-registry.wemove.com/ingrid-portal:7.5.2
     restart: unless-stopped
+    depends_on:
+      - postgres-db
     environment:
       - TZ=Europe/Berlin
       - JAVA_OPTS=-Dfile.encoding=UTF8
@@ -225,6 +229,36 @@ services:
     networks:
       - informationgrid-network
     command: ["bash", "./wait-for-it.sh", "postgres-db:5432", "-t", "120", "--", "./run.sh"]
+
+
+  harvester:
+    image: docker-registry.wemove.com/ingrid-harvester:7.5.0
+    restart: unless-stopped
+    depends_on:
+      - postgres-db
+    environment:
+     #- TZ=Europe/Berlin
+     - NODE_ENV=production
+     #- BASE_URL=/harvester/
+     - IMPORTER_PROFILE=ingrid
+     - ADMIN_PASSWORD=admin
+     - ELASTIC_URL=http://elastic:9200
+     - ELASTIC_VERSION=8
+     - ELASTIC_USER=elastic
+     - ELASTIC_PASSWORD=
+     - ELASTIC_ALIAS=harvester-alias
+     - ELASTIC_PREFIX=harvester_
+     - DB_URL=postgres-db
+     - DB_PORT=5432
+     - DB_NAME=harvester
+     - DB_USER=${POSTGRES_DB_ADMIN}
+     - DB_PASSWORD=${POSTGRES_DB_PASSWORD}
+    volumes:
+       - /etc/localtime:/etc/localtime:ro
+       #- ./harvester/config/config.json:/opt/ingrid/harvester/server/config.json
+       - ./harvester/config/client_config.json:/opt/ingrid/harvester/server/app/webapp/assets/config.json
+    networks:
+      - informationgrid-network
 
   mailrelay:
     image: simenduev/postfix-relay:1.4.0

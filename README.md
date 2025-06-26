@@ -48,7 +48,8 @@ Modify the default configuration via the components' admin-guis. The urls for th
 * <https://ingrid.localhost/adminer> : http login admin:admin, postgres-db:postgres:postgres
 * <https://ingrid.localhost/ibus-gui/r> : http login admin:admin, ibus login admin:admin
 * <https://ingrid.localhost/iplug-admin-sns/> : admin:admin
-* <https://ingrid.localhost/interface-csw-admin/> : admin:admin
+* <https://ingrid.localhost/csw-admin/> : admin:admin
+* <https://ingrid.localhost/harvester/> : admin:admin
 
 You can find detailed explanations about the configuration on <https://www.ingrid-oss.eu/latest/index.html>.
 

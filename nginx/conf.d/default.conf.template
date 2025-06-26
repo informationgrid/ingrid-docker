@@ -69,6 +69,19 @@ server {
         proxy_pass http://interface-search:8080/opensearch/;
         proxy_redirect http://$host/opensearch/ http://$host/interface-search/;
     }
+   
+    location = /harvester {
+        return 301 /harvester/;
+    }
+
+    location /harvester/ {
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        auth_basic "Restricted Content";
+        auth_basic_user_file /etc/nginx/auth/passwdfile.ingrid;
+        proxy_pass http://harvester:8090/;
+        proxy_redirect http://$host/ http://$host/harvester/;
+    }
 
     location /csw-admin/ {
         auth_basic "Restricted Content";
