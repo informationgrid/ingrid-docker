@@ -48,13 +48,7 @@ Modify the default configuration via the components' admin-guis. The urls for th
 * <https://ingrid.localhost/adminer> : http login admin:admin, postgres-db:postgres:postgres
 * <https://ingrid.localhost/ibus-gui/r> : http login admin:admin, ibus login admin:admin
 * <https://ingrid.localhost/iplug-admin-sns/> : admin:admin
-* <https://ingrid.localhost/iplug-admin-opensearch/> : admin:admin
-* <https://ingrid.localhost/iplug-admin-wfs-dsc/> : admin:admin
-* <https://ingrid.localhost/iplug-admin-wfs-dsc-zdm/> : admin:admin
-* <https://ingrid.localhost/iplug-admin-dsc/> : admin:admin
-* <https://ingrid.localhost/iplug-admin-se/> : admin:admin
 * <https://ingrid.localhost/interface-csw-admin/> : admin:admin
-* <https://ingrid.localhost/iplug-admin-csw-dsc/> : admin:admin
 
 You can find detailed explanations about the configuration on <https://www.ingrid-oss.eu/latest/index.html>.
 
@@ -67,34 +61,12 @@ The default host is set to `ingrid.localhost`, which resolves to localhost on li
 HOST=your.domain.name
 sed -i "s/ingrid.localhost/$HOST/g" \
   .env \
-  apache/httpd.conf \
-  apache/vhost.conf \
   interface-search/descriptor.xml \
   interface-search/interface-search.properties \
   interface-csw/conf/config.override.properties \
-  iplug-csw/conf/config.override.properties \
-  iplug-dsc/conf/config.override.properties \
-  iplug-dsc/conf/mapping/igc_to_idf_obj_dq.js \
-  iplug-excel/conf/config.override.properties \
-  iplug-excel/conf/config.override.properties \
-  iplug-ige/config.override.properties \
-  iplug-opensearch/conf/config.override.properties \
-  iplug-opensearch/conf/config.override.properties \
-  iplug-se/conf/config.override.properties \
-  iplug-se/conf/config.override.properties \
   iplug-sns/conf/config.override.properties \
-  iplug-wfs/conf/config.override.properties \
-  iplug-wfs/conf/config.override.properties \
-  iplug-wfs-zdm/conf/config.override.properties \
-  iplug-wfs-zdm/conf/config.override.properties \
-  iplug-xml/conf/config.override.properties \
-  iplug-xml/conf/config.override.properties \
-  iplug-xml/mapping/pom.xml_20111128102421/pom.xml_20111128102421 \
   portal/ingrid-portal-apps.override.properties \
   portal/mdek.override.properties \
-  server-opensearch/plugdescription.xml \
-  server-opensearch/plugdescription.xml \
-  server-opensearch/ingrid-opensearch.properties
 ```
 
 If you're on mac, use:
@@ -103,34 +75,14 @@ If you're on mac, use:
 HOST=your.domain.name
 sed -i "" "s/ingrid.localhost/$HOST/g" \
   .env \
-  apache/httpd.conf \
-  apache/vhost.conf \
   interface-search/descriptor.xml \
   interface-search/interface-search.properties \
   interface-csw/conf/config.override.properties \
-  iplug-csw/conf/config.override.properties \
-  iplug-dsc/conf/config.override.properties \
-  iplug-dsc/conf/mapping/igc_to_idf_obj_dq.js \
-  iplug-excel/conf/config.override.properties \
-  iplug-excel/conf/config.override.properties \
-  iplug-ige/config.override.properties \
-  iplug-opensearch/conf/config.override.properties \
-  iplug-opensearch/conf/config.override.properties \
   iplug-se/conf/config.override.properties \
   iplug-se/conf/config.override.properties \
   iplug-sns/conf/config.override.properties \
-  iplug-wfs/conf/config.override.properties \
-  iplug-wfs/conf/config.override.properties \
-  iplug-wfs-zdm/conf/config.override.properties \
-  iplug-wfs-zdm/conf/config.override.properties \
-  iplug-xml/conf/config.override.properties \
-  iplug-xml/conf/config.override.properties \
-  iplug-xml/mapping/pom.xml_20111128102421/pom.xml_20111128102421 \
   portal/ingrid-portal-apps.override.properties \
   portal/mdek.override.properties \
-  server-opensearch/plugdescription.xml \
-  server-opensearch/plugdescription.xml \
-  server-opensearch/ingrid-opensearch.properties
 ```
 
 If you updated the host-setting afterwards, update your setup with:
@@ -156,7 +108,7 @@ Almost each service has an own administration web gui. You can find the url need
 
 ## Remarks for Mac Users
 
-Our last test-run on mac with docker-for-mac installed had issues with mysql and sslproxy. The mysql-container was continuously restarting while the sslproxy-container exited with error 128. If you're on a mac and interested in getting this to work on your machine, drop us a note. Currently we don't have active ingrid users on mac machines so we didn't further investigate.
+This setup might work for Intel Macs. Currently we don't have active ingrid users on mac nor intensions to provide docker images for ARM machines, so we didn't further investigate.
 
 ## Set Passwords
 
@@ -188,16 +140,7 @@ Change property `ADMIN_GUI_PASSWORD_HASH` in file `.env`.
 
 Change property `ingrid.admin.password` in file `interface-csw\conf\config.override.properties`. Change property `plugdescription.IPLUG_ADMIN_PASSWORD` in files
 
-* `iplug-csw\conf\config.override.properties`
-* `iplug-dsc\conf\config.override.properties`
-* `iplug-excel\conf\config.override.properties`
-* `iplug-ige\config.override.properties`
-* `iplug-opensearch\conf\config.override.properties`
-* `iplug-se\conf\config.override.properties`
 * `iplug-sns\conf\config.override.properties`
-* `iplug-wfs\conf\config.override.properties`
-* `iplug-wfs-zdm\conf\config.override.properties`
-* `iplug-xml\conf\config.override.properties`
 
 ### Http Auth
 
