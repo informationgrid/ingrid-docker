@@ -3,7 +3,7 @@
 This installation is not for production. It intended use is to get an impression of the functionality.
 This README covers only configuration for a local test case. The Editor (and Keycloak) require additional configuration to make this services production ready.
 
-Clone this repository and open a shell in it. The setup works on localhost or on a remote machine. If you're on a remote, you have to change the HOST-variable, see section *Change Host*. This setup may cause problems if you're on a mac, see section *Remarks for Mac Users*.
+Clone this repository, open a shell in it and execute the `start_demo.sh` script. It might ask for a sudo password. Alternatively you can execute the steps manually (see below). The setup works on localhost or on a remote machine. If you're on a remote, you have to change the HOST-variable, see section *Change Host*. This setup may cause problems if you're on a mac, see section *Remarks for Mac Users*.
 
 ```sh
 # Use the provided sample .env file.
@@ -34,7 +34,7 @@ sudo docker compose up -d
 sudo docker compose ps
 ```
 
-Open the portal at https://ingrid.localhost and accept the self-signed certificate warning. The services need some time to index the sample data, so they may be inaccessible for about a minute or two.
+Open the portal at http://ingrid.localhost . The services need some time to index the sample data, so they may be inaccessible for about a minute or two.
 
 Set confidential passwords as described in section *Set Passwords*.
 
