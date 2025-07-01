@@ -44,12 +44,12 @@ Modify the default configuration via the components' admin-guis. The urls for th
 
 * <http://ingrid.localhost/ige-ng> : http login ige:admin
 * <http://ingrid.localhost/keycloak> : http login admin:admin
-* <https://ingrid.localhost/codelist-repo> : http login admin:admin
-* <https://ingrid.localhost/adminer> : http login admin:admin, postgres-db:postgres:postgres
-* <https://ingrid.localhost/ibus-gui/r> : http login admin:admin, ibus login admin:admin
-* <https://ingrid.localhost/iplug-admin-sns/> : admin:admin
-* <https://ingrid.localhost/csw-admin/> : admin:admin
-* <https://ingrid.localhost/harvester/> : admin:admin
+* <http://ingrid.localhost/codelist-repo> : http login admin:admin
+* <http://ingrid.localhost/adminer> : http login admin:admin, postgres-db:postgres:postgres
+* <http://ingrid.localhost/ibus-gui/r> : http login admin:admin, ibus login admin:admin
+* <http://ingrid.localhost/iplug-admin-sns/> : admin:admin
+* <http://ingrid.localhost/csw-admin/> : admin:admin
+* <http://ingrid.localhost/harvester/> : admin:admin
 
 You can find detailed explanations about the configuration on <https://www.ingrid-oss.eu/latest/index.html>.
 
