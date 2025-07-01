@@ -129,7 +129,7 @@ services:
     environment:
       - TZ=Europe/Berlin
       - CONTEXT_PATH=/ige-ng
-      - BROKER_URL=wss://${HOST}/ige-ng/ws
+      - BROKER_URL=ws://${HOST}/ige-ng/ws
       - _JAVA_OPTIONS=-Xmx2g -Dstorage.diskCache.bufferSize=256 -Dspring.profiles.active=elasticsearch,ingrid,ibus,codelist-repo
       #- JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8699
       #- KEYCLOAK_CLIENT_ID=ige-ng
