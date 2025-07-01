@@ -33,7 +33,7 @@ printf "The installation uses docker images from a non-public docker registry.\n
 sudo docker login -u readonly -p readonly docker-registry.wemove.com &> /dev/null # password "readonly"
 sudo docker compose up -d
 
-printf "First time boot requires around 60 seconds to be ready."
+printf "First time boot requires around 60 seconds to be ready.\n\n\n"
 sleep 60
 sudo docker compose ps
 exit 0
