@@ -237,7 +237,6 @@ services:
     depends_on:
       - postgres-db
     environment:
-     #- TZ=Europe/Berlin
      - NODE_ENV=production
      #- BASE_URL=/harvester/
      - IMPORTER_PROFILE=ingrid
@@ -255,7 +254,7 @@ services:
      - DB_PASSWORD=${POSTGRES_DB_PASSWORD}
     volumes:
        - /etc/localtime:/etc/localtime:ro
-       #- ./harvester/config/config.json:/opt/ingrid/harvester/server/config.json
+       - ./harvester/config/config.json:/opt/ingrid/harvester/server/config.json
        - ./harvester/config/client_config.json:/opt/ingrid/harvester/server/app/webapp/assets/config.json
     networks:
       - informationgrid-network
