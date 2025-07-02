@@ -3,7 +3,14 @@
 This installation is not for production. It intended use is to get an impression of the functionality.
 This README covers only configuration for a local test case. The Editor (and Keycloak) require additional configuration to make this services production ready.
 
-Clone this repository, open a shell in it and execute the `start_demo.sh` script. It might ask for a sudo password. Alternatively you can execute the steps manually (see below). The setup works on localhost or on a remote machine. If you're on a remote, you have to change the HOST-variable, see section *Change Host*. This setup may cause problems if you're on a mac, see section *Remarks for Mac Users*.
+Clone this repository  and execute the `start_demo_nossl.sh` script. It might ask for a sudo password. 
+
+```sh
+git clone https://github.com/informationgrid/ingrid-docker.git
+./start_demo_nossl.sh
+```
+
+Alternatively you can execute the steps manually (see below). The setup works on localhost or on a remote machine. If you're on a remote, you have to change the HOST-variable, see section *Change Host*. This setup may cause problems if you're on a mac, see section *Remarks for Mac Users*.
 
 ```sh
 # Use the provided sample .env file.
