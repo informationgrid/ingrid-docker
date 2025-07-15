@@ -17,6 +17,7 @@ printf "Set permissions for default user.\n"
 sudo chown -R 1000:1000 ./_data
 
 printf "Copy initial sample webmapclient data.\n"
+mkdir -p map/WebmapClientData
 cp -ar map/WebmapClientData.test/* map/WebmapClientData
 
 printf "Increase memory for elastic.\n"
