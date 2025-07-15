@@ -1,0 +1,19 @@
+enabled: true
+from: support-test@uvp-verbund.de
+to: support-test@uvp-verbund.de
+mailer:
+  engine: smtp
+  smtp:
+    server: default
+    port: 587
+    encryption: tls
+    user: smtp
+    password: '1234'
+  sendmail:
+    bin: '/usr/sbin/sendmail -bs'
+content_type: text/plain
+debug: false
+cc: null
+bcc: null
+reply_to: null
+body: null

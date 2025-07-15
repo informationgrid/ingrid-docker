@@ -49,6 +49,7 @@ The default installation includes all optional plugins. To disable them, comment
 
 Modify the default configuration via the components' admin-guis. The urls for them are:
 
+* <http://ingrid.localhost/admin>  : http login: admin:Adm1nAdm1n
 * <http://ingrid.localhost/ige-ng> : http login ige:admin
 * <http://ingrid.localhost/keycloak> : http login admin:admin
 * <http://ingrid.localhost/codelist-repo> : http login admin:admin
@@ -106,13 +107,13 @@ sudo docker compose restart
 
 In this configuration the Editor and the Keycloak require to be called with http:// /and not https://)
 
-Some pages of the portal are secured via http-auth as defined in `./apache/passwdfile.ingrid` and in `.apache/vhost.conf`. The default logins are admin/admin and ingrid/ingrid. The logins for all iplugs are also admin/admin as default.
+Some pages of the portal are secured via http-auth as defined in `./nginx/auth/passwdfile.ingrid` and in `.nginx/conf.d/default.conf.template`. The default logins are admin/admin and ingrid/ingrid. The logins for all iplugs are also admin/admin as default. Except the admin GUI for portal which is `Adm1nAdm1n`
 
 The containers can be restarted at any time. Possible running indexing processes are automatically cleaned up. If you change the configuration of a service via the files in this repository, you have to restart the container to apply them.
 
 You can comment out services from the `docker-compose.yml` to disable them.
 
-Almost each service has an own administration web gui. You can find the url needed to access them in the file `apache/vhost.conf`.
+Almost each service has an own administration web gui. You can find the url needed to access them in the file `nginx/conf.d/default.conf.template`.
 
 ## Remarks for Mac Users
 

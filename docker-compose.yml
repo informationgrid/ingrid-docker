@@ -27,16 +27,18 @@ services:
       # nginx conf
       - NGINX_HOST=${HOST}
     volumes:
+      - ./nginx/www:/var/www
       - ./nginx/auth:/etc/nginx/auth
       - ./nginx/conf.d:/etc/nginx/templates
       - ./ige-ng/upload:/tmp/ingrid/upload-ige-ng
+      - ./grav:/var/www/portal
     ports:
       - 80:80
     networks:
       - informationgrid-network
 
   codelist-repo:
-    image: docker-registry.wemove.com/ingrid-codelist-repository:7.5.0
+    image: docker-registry.wemove.com/ingrid-codelist-repository:8.0.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -87,7 +89,7 @@ services:
       - informationgrid-network
 
   ibus:
-    image: docker-registry.wemove.com/ingrid-ibus:7.5.2
+    image: docker-registry.wemove.com/ingrid-ibus:8.0.0
     depends_on:
       - elastic
     restart: unless-stopped
@@ -114,7 +116,7 @@ services:
       - informationgrid-network
 
   ige-ng:
-    image: docker-registry.wemove.com/ingrid-ige-ng:7.5.3
+    image: docker-registry.wemove.com/ingrid-ige-ng:8.0.0
    # Workaround build to deploy locally. Not neccessary if using CA's which are already in the JVM Truststore
    #build:
    #  context: ./ige-ng/build
@@ -195,44 +197,46 @@ services:
       - informationgrid-network
 
 
-  portal:
-    image: docker-registry.wemove.com/ingrid-portal:7.5.2
+  ingrid-api:
+    image: docker-registry.wemove.com/ingrid-api:8.0.0
     restart: unless-stopped
-    depends_on:
-      - postgres-db
     environment:
       - TZ=Europe/Berlin
-      - JAVA_OPTS=-Dfile.encoding=UTF8
-      - DB_URL_PORTAL=jdbc:postgresql://postgres-db:5432/ingrid_portal
-      - DB_URL_MDEK=jdbc:postgresql://postgres-db:5432/mdek
-      - DB_DRIVERCLASS=org.postgresql.Driver
-      - DB_DIALECT=org.hibernate.dialect.PostgreSQLDialect
-      - DB_USER=${POSTGRES_DB_ADMIN}
-      - DB_PASSWORD=${POSTGRES_DB_PASSWORD}
-      - QUARTZ_DRIVERCLASS=org.quartz.impl.jdbcjobstore.PostgreSQLDelegate
-      # enable/disable IGE web application in portal container
-      - IGE_DISABLED=true
-      - PORTAL_SERVER_CONNECTOR_ATTR=proxyPort="80" scheme="http" secure="false"
-    volumes:
-      - ./_data/logs/ingrid-portal:/opt/ingrid/ingrid-portal/apache-tomcat/logs
-      - ./_data/portal/upload:/tmp/ingrid/upload
-      - ./_data/portal/WebmapClientData:/opt/ingrid/WebmapClientData
-      # add some configurations inside the docker image!? those without database settings!
-      - ./portal/test_files:/opt/ingrid/ingrid-portal/apache-tomcat/webapps/ROOT/test_files
-      - ./portal/mdek.override.properties:/opt/ingrid/ingrid-portal/apache-tomcat/webapps/ingrid-portal-mdek-application/WEB-INF/classes/mdek.override.properties
-      - ./portal/ingrid-portal-apps.override.properties:/opt/ingrid/ingrid-portal/apache-tomcat/webapps/ingrid-portal-apps/WEB-INF/classes/ingrid-portal-apps.override.properties
-      - ./portal/application.override.properties:/opt/ingrid/ingrid-portal/apache-tomcat/webapps/ingrid-webmap-client/WEB-INF/classes/application.override.properties
-    deploy:
-      resources:
-        limits:
-          memory: 512M
+      - ES_HOST=elastic
+      - ES_USERNAME=elastic
+      - ES_PASSWORD=admin
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,address=*:8476,server=y,suspend=n
+    #ports:
+    #  - "127.0.0.1:18300:8080"
+    #  - "8476:8476"
     networks:
       - informationgrid-network
-    command: ["bash", "./wait-for-it.sh", "postgres-db:5432", "-t", "120", "--", "./run.sh"]
+
+  portal:
+    image: docker-registry.wemove.com/ingrid-portal:8.0.0
+    restart: unless-stopped
+    volumes:
+      - ./grav:/var/www/portal
+      - ./portal/logs:/var/www/portal/logs
+      - ./portal/user/accounts:/var/www/portal/user/accounts
+      - ./portal/user/config:/var/www/portal/user/config
+    environment:
+      - GRAV_FOLDER=portal
+      - INGRID_API=http://ingrid-api:8080/
+      - CODELIST_API=http://codelist-repo:8080/rest/getCodelists
+      - CODELIST_USER=admin
+      - CODELIST_PASS=admin
+      - MARKDOWN_AUTO_LINE_BREAKS=true
+      #- THEME_COPY_PAGES_INIT=true
+      - ENABLE_SCHEDULER_RSS=false
+      - ENABLE_MVIS=false
+      - ENABLE_FOOTER_BANNER=true
+    networks:
+      - informationgrid-network
 
 
   harvester:
-    image: docker-registry.wemove.com/ingrid-harvester:7.5.0
+    image: docker-registry.wemove.com/ingrid-harvester:8.0.0
     restart: unless-stopped
     depends_on:
       - postgres-db
@@ -278,7 +282,7 @@ services:
       - informationgrid-network
 
   iplug-sns:
-    image: docker-registry.wemove.com/ingrid-iplug-sns:7.5.2
+    image: docker-registry.wemove.com/ingrid-iplug-sns:8.0.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -294,7 +298,7 @@ services:
       - informationgrid-network
 
   interface-csw:
-    image: docker-registry.wemove.com/ingrid-interface-csw:7.5.0
+    image: docker-registry.wemove.com/ingrid-interface-csw:8.0.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -311,7 +315,7 @@ services:
       - informationgrid-network
 
   interface-search:
-    image: docker-registry.wemove.com/ingrid-interface-search:7.5.0
+    image: docker-registry.wemove.com/ingrid-interface-search:8.0.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin

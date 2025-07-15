@@ -1,0 +1,16 @@
+state: enabled
+email: webmaster@ingrid-portal.de
+fullname: Administrator
+title: Administrator
+hashed_password: $2y$10$99bX3uInb3PEg3.L/KiItOVQ3u3JS.iPzPj9DhvMK3aHyM.FMpizi
+language: en
+content_editor: default
+twofa_enabled: false
+twofa_secret: JXR6OAS6RR4XVCCVTVV4YLEHBHSNZNLH
+avatar: {  }
+access:
+  site:
+    login: true
+  admin:
+    login: true
+    super: true
