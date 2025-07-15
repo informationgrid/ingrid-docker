@@ -50,6 +50,14 @@ server {
         proxy_redirect http://$host/ http://$host/adminer/;
     }
 
+    location /ingrid-webmap-client/ {
+        auth_basic "Restricted Content";
+        auth_basic_user_file /etc/nginx/auth/passwdfile.ingrid;
+        proxy_pass http://mapclient:8080/ingrid-webmap-client/;
+        proxy_redirect http://$host/ http://$host/;
+    }
+
+
     location /ibus-gui/ {
         auth_basic "Restricted Content";
         auth_basic_user_file /etc/nginx/auth/passwdfile.ingrid;

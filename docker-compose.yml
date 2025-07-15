@@ -234,6 +234,14 @@ services:
     networks:
       - informationgrid-network
 
+  mapclient:
+    image: docker-registry.wemove.com/ingrid-webmap-client:8.0.0
+    restart: unless-stopped
+    volumes:
+      - ./map/application.override.properties:/usr/local/tomcat/webapps/ingrid-webmap-client/WEB-INF/classes/application.override.properties
+      - ./map/WebmapClientData:/opt/ingrid/WebmapClientData
+    networks:
+      - informationgrid-network
 
   harvester:
     image: docker-registry.wemove.com/ingrid-harvester:8.0.0
