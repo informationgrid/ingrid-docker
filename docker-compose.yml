@@ -116,7 +116,7 @@ services:
       - informationgrid-network
 
   ige-ng:
-    image: docker-registry.wemove.com/ingrid-ige-ng:8.0.0
+    image: docker-registry.wemove.com/ingrid-ige-ng:8.0.1
    # Workaround build to deploy locally. Not neccessary if using CA's which are already in the JVM Truststore
    #build:
    #  context: ./ige-ng/build
@@ -323,7 +323,7 @@ services:
       - informationgrid-network
 
   interface-search:
-    image: docker-registry.wemove.com/ingrid-interface-search:8.0.0
+    image: docker-registry.wemove.com/ingrid-interface-search:8.0.1
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
