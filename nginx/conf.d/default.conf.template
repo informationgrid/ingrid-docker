@@ -4,9 +4,6 @@ server {
 
     rewrite_log on;
 
-    # specifying the resolver explicitly here
-    #resolver 127.0.0.11;
-
     listen 80 default_server;
     listen [::]:80 default_server;
 
@@ -17,28 +14,9 @@ server {
     proxy_connect_timeout 18000;
     proxy_send_timeout 18000;
 
-    # redirect old /ingrid-portal url to / for backward compatibility
-    #location = /ingrid-portal {
-    #    return 301 /;
-    #}
-    #location /ingrid-portal/ {
-    #    #rewrite ^/ingrid-portal/(.*)$ /$1 permanent;
-    #    rewrite ^/ingrid-portal/(.*)$ /$1;
-    #}
-    #location / {
-    #    rewrite ^ $uri?lang=de break;
-    #    proxy_pass http://portal:8080/;
-    #    proxy_redirect http://$host/ http://$host/;
-    #    # TODO: ajp_pass portal:8009;
-    #}
-
     location /documents {
         root /tmp/ingrid/upload-ige-ng;
     }
-
-    #location /documents-ige-ng {
-    #    root /tmp/ingrid/upload-ige-ng;
-    #}
 
     location = /adminer {
         return 302 /adminer/;
@@ -53,7 +31,7 @@ server {
     location /ingrid-webmap-client/ {
         auth_basic "Restricted Content";
         auth_basic_user_file /etc/nginx/auth/passwdfile.ingrid;
-        proxy_pass http://mapclient:8080/ingrid-webmap-client/;
+        proxy_pass http://ingrid-mapclient:8080/ingrid-webmap-client/;
         proxy_redirect http://$host/ http://$host/;
     }
 
@@ -61,7 +39,7 @@ server {
     location /ibus-gui/ {
         auth_basic "Restricted Content";
         auth_basic_user_file /etc/nginx/auth/passwdfile.ingrid;
-        proxy_pass http://ibus:8080/;
+        proxy_pass http://ingrid-ibus:8080/;
         proxy_redirect http://$host/ http://$host/ibus-gui/;
     }
 
@@ -69,12 +47,12 @@ server {
         rewrite /codelist-repo /codelist-repo/;
     }
     location /codelist-repo/ {
-        proxy_pass http://codelist-repo:8080/;
+        proxy_pass http://ingrid-codelist-repo:8080/;
         proxy_redirect http://$host/ http://$host/codelist-repo/;
     }
 
     location /interface-opensearch/ {
-        proxy_pass http://interface-search:8080/opensearch/;
+        proxy_pass http://ingrid-interface-search:8080/opensearch/;
         proxy_redirect http://$host/opensearch/ http://$host/interface-search/;
     }
    
@@ -87,27 +65,27 @@ server {
         proxy_set_header Connection "upgrade";
         auth_basic "Restricted Content";
         auth_basic_user_file /etc/nginx/auth/passwdfile.ingrid;
-        proxy_pass http://harvester:8090/;
+        proxy_pass http://ingrid-harvester:8090/;
         proxy_redirect http://$host/ http://$host/harvester/;
     }
 
     location /csw-admin/ {
         auth_basic "Restricted Content";
         auth_basic_user_file /etc/nginx/auth/passwdfile.ingrid;
-        proxy_pass http://interface-csw:8080/;
+        proxy_pass http://ingrid-interface-csw:8080/;
         proxy_redirect http://$host/ http://$host/csw-admin/;
         proxy_redirect http://$host:80/ http://$host/csw-admin/;
     }
 
     location /csw {
-        proxy_pass http://interface-csw:8080/csw;
+        proxy_pass http://ingrid-interface-csw:8080/csw;
         proxy_redirect http://$host/csw http://$host/csw;
     }
 
     location /iplug-admin-sns/ {
         auth_basic "Restricted Content";
         auth_basic_user_file /etc/nginx/auth/passwdfile.ingrid;
-        proxy_pass http://iplug-sns:8080/;
+        proxy_pass http://ingrid-iplug-sns:8080/;
         proxy_redirect http://$host/ http://$host/iplug-admin-sns/;
     }
 
@@ -121,7 +99,7 @@ server {
         proxy_set_header X-Forwarded-Host $host:$server_port;
         proxy_set_header X-Forwarded-Server $host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_pass http://ige-ng;
+        proxy_pass http://ingrid-editor;
         proxy_redirect default;
 
     }
@@ -177,7 +155,7 @@ server {
         # Choose either a socket or TCP/IP address
         # fastcgi_pass unix:/run/php/php8.2-fpm.sock;
         # fastcgi_pass unix:/var/run/php5-fpm.sock; #legacy
-        fastcgi_pass portal:9000;
+        fastcgi_pass ingrid-portal:9000;
 
         fastcgi_split_path_info ^(.+\.php)(/.+)$;
         fastcgi_index index.php;
