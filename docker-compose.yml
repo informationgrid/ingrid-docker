@@ -24,7 +24,6 @@ services:
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
-      # nginx conf
       - NGINX_HOST=${HOST}
     volumes:
       - ./nginx/www:/var/www
@@ -37,7 +36,7 @@ services:
     networks:
       - informationgrid-network
 
-  codelist-repo:
+  ingrid-codelist-repo:
     image: docker-registry.wemove.com/ingrid-codelist-repository:8.0.0
     restart: unless-stopped
     environment:
@@ -47,8 +46,6 @@ services:
     volumes:
       - ./_data/logs/codelist-repo:/opt/ingrid/ingrid-codelist-repository/logs
       - ./_data/codelist-repository:/opt/ingrid/ingrid-codelist-repository/data
-      # PATCHES MUST NOT BE MAPPED! NEW PATCHES WON'T BE EXECUTED! Use 'docker cp' if you must.
-      #- ./codelist-repository/patches:/opt/ingrid/ingrid-codelist-repository/patches
     deploy:
       resources:
         limits:
@@ -88,7 +85,7 @@ services:
     networks:
       - informationgrid-network
 
-  ibus:
+  ingrid-ibus:
     image: docker-registry.wemove.com/ingrid-ibus:8.0.0
     depends_on:
       - elastic
@@ -104,7 +101,6 @@ services:
     volumes:
       - ./_data/logs/ibus:/opt/ingrid/ingrid-ibus/logs
       - ./ibus/conf/activatedIplugs.properties:/opt/ingrid/ingrid-ibus/conf/activatedIplugs.properties
-      - ./ibus/conf/application-default.properties:/opt/ingrid/ingrid-ibus/conf/application-default.properties
     #ports:
     #  - 127.0.0.1:12300:9900
     command: ["sh", "wait-for-elasticsearch.sh", "elastic:9200", "/bin/sh start.sh start"]
@@ -115,13 +111,13 @@ services:
     networks:
       - informationgrid-network
 
-  ige-ng:
-    image: docker-registry.wemove.com/ingrid-ige-ng:8.0.1.1
-   # Workaround build to deploy locally. Not neccessary if using CA's which are already in the JVM Truststore
+  ingrid-editor:
+    image: docker-registry.wemove.com/ingrid-ige-ng:8.0.2
+   # Workaround build to deploy inside an intranet. Not neccessary if using CA's which are already in the JVM Truststore
    #build:
    #  context: ./ige-ng/build
    #  args: 
-   #    - IGE_NG_VERSION=7.3.2
+   #    - IGE_NG_VERSION=8.0.2
    #    - CERT_FILE_NAME_1=fullchain.pem
    #    - CERT_FILE_NAME_2=privkey.pem
     restart: unless-stopped
@@ -134,7 +130,7 @@ services:
       - BROKER_URL=ws://${HOST}/ige-ng/ws
       - _JAVA_OPTIONS=-Xmx2g -Dstorage.diskCache.bufferSize=256 -Dspring.profiles.active=elasticsearch,ingrid,ibus,codelist-repo
       #- JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8699
-      #- KEYCLOAK_CLIENT_ID=ige-ng
+      #- KEYCLOAK_CLIENT_ID=ige-ng-backend
       - DATABASE_HOST=postgres-db
       - DATABASE_USERNAME=${POSTGRES_DB_ADMIN}
       - DATABASE_PASSWORD=${POSTGRES_DB_PASSWORD}
@@ -149,15 +145,42 @@ services:
       - KEYCLOAK_BACKEND_USER=ige
       - KEYCLOAK_BACKEND_USER_PASSWORD=admin
       - SHOW_SWAGGER_UI=true
-  #  ports:
-  #    - "8699:8699"
-      #- "8083:80"
+      - APP_HELP_LINK=https://metaver-bedienungsanleitung.readthedocs.io
+      #- ALLOW_OVERWRITE_ON_VERSION_CONFLICT=true
+      #- APP_INSTANCE_ID=ige-ng
+      #- APP_PROXY_URL=""
+      #- ENABLE_AI=false
+      #- KEYCLOAK_REALM
+      #- KEYCLOAK_RESOURCE=ige-ng-frontend
+      #- OPEN_AI_TOKEN=""
+      #- MAIL_HOST=mailrelay
+      #- MAP_TILE_URL=https://gdi-niederrhein-geodienste.de/openstreetmap/{z}/{x}/{y}.png
+      #- MAP_ATTRIBUTION=&copy; <a href="https://openstreetmap.de" target="_blank">OpenStreetMap</a> contributors
+      #- MAP_WMS_URL=
+      #- MAP_WMS_LAYERS=
+      #- MATOMO_URL=
+      #- MATOMO_SITE_ID=
+      #- NOMINATIM_URL=
+      #- SWAGGER_SERVERS=http://localhost:8550::Local Server,https://ige-ng.informationgrid.eu/::Test Server
+      #- SERVER_PORT=80
+      #- SHOW_ACCESSIBILITY_LINK=false
+      #- SHOW_TEST_BADGE=false
+      #- VIRUSSCAN_MAIL_RECEIVER=
+      #- UPLOAD_EXTERNAL_URL=/documents/
+      #- VIRUSSCAN_SCHEDULE=0 0 2 * * *
+      #- WAIT_FOR_PARAM_TIMEOUT=
+      #- ZABBIX_API_KEY=
+      #- ZABBIX_API_URL=
+      #- ZABBIX_CATALOGS=
+      #- ZABBIX_CHECK_COUNT=3
+      #- ZABBIX_CHECK_DELAY=8h
+      #- ZABBIX_DETAIL_URL_TEMPLATE=
+      #- ZABBIX_UPLOAD_URL=
     networks:
       - informationgrid-network
     volumes:
-      - ./ige-ng/application-ingrid.properties:/app/resources/application-ingrid.properties
-      - ./_data/ige-ng/upload:/tmp/ingrid/upload-ige-ng
-      - ./ige-ng/codelists:/codelists
+      - ./_data/ingrid-editor/upload:/tmp/ingrid/upload-ingrid-editor
+      - ./ingrid-editor/codelists:/codelists
 
   keycloak:
     image: docker-registry.wemove.com/keycloak:26.2.4-1
@@ -212,12 +235,12 @@ services:
     networks:
       - informationgrid-network
 
-  portal:
+  ingrid-portal:
     image: docker-registry.wemove.com/ingrid-portal:8.0.0
     restart: unless-stopped
     volumes:
       - ./grav:/var/www/portal
-      - ./portal/logs:/var/www/portal/logs
+      - ./_data/logs/portal:/var/www/portal/logs
       - ./portal/user/accounts:/var/www/portal/user/accounts
       - ./portal/user/config:/var/www/portal/user/config
     environment:
@@ -234,7 +257,7 @@ services:
     networks:
       - informationgrid-network
 
-  mapclient:
+  ingrid-mapclient:
     image: docker-registry.wemove.com/ingrid-webmap-client:8.0.0
     restart: unless-stopped
     volumes:
@@ -243,7 +266,7 @@ services:
     networks:
       - informationgrid-network
 
-  harvester:
+  ingrid-harvester:
     image: docker-registry.wemove.com/ingrid-harvester:8.0.0
     restart: unless-stopped
     depends_on:
@@ -289,7 +312,7 @@ services:
     networks:
       - informationgrid-network
 
-  iplug-sns:
+  ingrid-iplug-sns:
     image: docker-registry.wemove.com/ingrid-iplug-sns:8.0.0
     restart: unless-stopped
     environment:
@@ -305,7 +328,7 @@ services:
     networks:
       - informationgrid-network
 
-  interface-csw:
+  ingrid-interface-csw:
     image: docker-registry.wemove.com/ingrid-interface-csw:8.0.0
     restart: unless-stopped
     environment:
@@ -322,7 +345,7 @@ services:
     networks:
       - informationgrid-network
 
-  interface-search:
+  ingrid-interface-search:
     image: docker-registry.wemove.com/ingrid-interface-search:8.0.1
     restart: unless-stopped
     environment:
