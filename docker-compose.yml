@@ -236,7 +236,7 @@ services:
       - informationgrid-network
 
   ingrid-portal:
-    image: docker-registry.wemove.com/ingrid-portal:8.0.0
+    image: docker-registry.wemove.com/ingrid-portal:8.0.1.4
     restart: unless-stopped
     volumes:
       - ./grav:/var/www/portal
