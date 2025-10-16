@@ -229,9 +229,7 @@ services:
       - ES_USERNAME=elastic
       - ES_PASSWORD=admin
       - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,address=*:8476,server=y,suspend=n
-    #ports:
-    #  - "127.0.0.1:18300:8080"
-    #  - "8476:8476"
+    
     networks:
       - informationgrid-network
 
@@ -241,9 +239,10 @@ services:
     volumes:
       - ./grav:/var/www/portal
       - ./_data/logs/portal:/var/www/portal/logs
-      - ./portal/user/accounts:/var/www/portal/user/accounts
-      - ./portal/user/config:/var/www/portal/user/config
-      - ./portal/user/üages:/var/www/portal/user/pages
+      - ./portal/user/:/var/www/portal/user/
+      #- ./portal/user/accounts:/var/www/portal/user/accounts
+      #- ./portal/user/config:/var/www/portal/user/config
+      - ./portal/user/pages:/var/www/portal/user/pages
     environment:
       - GRAV_FOLDER=portal
       - INGRID_API=http://ingrid-api:8080/
