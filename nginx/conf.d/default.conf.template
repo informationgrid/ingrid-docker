@@ -167,3 +167,14 @@ server {
 
 
 }
+
+server {
+    listen 443 ssl;
+    server_name ingrid.localhost 127.0.0.1;
+
+    ssl_certificate     /etc/nginx/ssl/dummy.crt;
+    ssl_certificate_key /etc/nginx/ssl/dummy.key;
+
+    
+    return 301 http://$host$request_uri;
+}

@@ -29,10 +29,12 @@ services:
       - ./nginx/www:/var/www
       - ./nginx/auth:/etc/nginx/auth
       - ./nginx/conf.d:/etc/nginx/templates
+      - ./nginx/ssl:/etc/nginx/ssl/
       - ./ingrid-editor/upload:/tmp/ingrid/upload-ige-ng
       - ./grav:/var/www/portal
     ports:
       - 80:80
+      - 443:443
     networks:
       - informationgrid-network
 
@@ -183,7 +185,7 @@ services:
       - ./ingrid-editor/codelists:/codelists
 
   keycloak:
-    image: docker-registry.wemove.com/keycloak:26.2.4-3
+    image: docker-registry.wemove.com/keycloak:26.4.2-1
     restart: unless-stopped
     depends_on:
       - postgres-db

@@ -20,6 +20,11 @@ printf "Copy initial sample webmapclient data.\n"
 mkdir -p map/WebmapClientData
 cp -ar map/WebmapClientData.test/* map/WebmapClientData
 
+printf "Create dummy certificate"
+mkdir -p ./nginx/ssl/
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+     -keyout ./nginx/ssl/dummy.key -out ./nginx/ssl/dummy.crt ‑subj "/CN=ingrid.localhost"
+
 printf "Increase memory for elastic.\n"
 if [[ $($UNAME -a | $GREP -i linux) ]]; then
 sysctl vm.max_map_count
