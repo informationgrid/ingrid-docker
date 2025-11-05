@@ -32,6 +32,7 @@ services:
       - ./nginx/ssl:/etc/nginx/ssl/
       - ./ingrid-editor/upload:/tmp/ingrid/upload-ige-ng
       - ./grav:/var/www/portal
+      - ./portal/user:/var/www/portal/user
     ports:
       - 80:80
       - 443:443
@@ -114,7 +115,7 @@ services:
       - informationgrid-network
 
   ingrid-editor:
-    image: docker-registry.wemove.com/ingrid-ige-ng:8.1.0
+    image: docker-registry.wemove.com/ingrid-ige-ng:8.1.1
    # Workaround build to deploy inside an intranet. Not neccessary if using CA's which are already in the JVM Truststore
    #build:
    #  context: ./ige-ng/build
@@ -244,7 +245,7 @@ services:
       - ./portal/user/:/var/www/portal/user/
       #- ./portal/user/accounts:/var/www/portal/user/accounts
       #- ./portal/user/config:/var/www/portal/user/config
-      - ./portal/user/pages:/var/www/portal/user/pages
+      #- ./portal/user/pages:/var/www/portal/user/pages
     environment:
       - GRAV_FOLDER=portal
       - INGRID_API=http://ingrid-api:8080/
@@ -348,7 +349,7 @@ services:
       - informationgrid-network
 
   ingrid-interface-search:
-    image: docker-registry.wemove.com/ingrid-interface-search:8.1.0
+    image: docker-registry.wemove.com/ingrid-interface-search:8.1.1
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
