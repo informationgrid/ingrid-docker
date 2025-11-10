@@ -115,12 +115,12 @@ services:
       - informationgrid-network
 
   ingrid-editor:
-    image: docker-registry.wemove.com/ingrid-ige-ng:8.1.1
+    image: docker-registry.wemove.com/ingrid-ige-ng:8.1.1.1
    # Workaround build to deploy inside an intranet. Not neccessary if using CA's which are already in the JVM Truststore
    #build:
    #  context: ./ige-ng/build
    #  args: 
-   #    - IGE_NG_VERSION=8.0.2
+   #    - IGE_NG_VERSION=8.1.1.1
    #    - CERT_FILE_NAME_1=fullchain.pem
    #    - CERT_FILE_NAME_2=privkey.pem
     restart: unless-stopped
@@ -137,9 +137,9 @@ services:
       - DATABASE_HOST=postgres-db
       - DATABASE_USERNAME=${POSTGRES_DB_ADMIN}
       - DATABASE_PASSWORD=${POSTGRES_DB_PASSWORD}
-      - KEYCLOAK_URL=http://keycloak:8080/keycloak
-      - KEYCLOAK_URL_FRONTEND=http://${HOST}/keycloak
-      - CODELIST_REPO_URL=http://codelist-repo:8080
+      - KEYCLOAK_URL=http://${HOST}/keycloak
+      #- KEYCLOAK_URL_FRONTEND=http://${HOST}/keycloak
+      - CODELIST_REPO_URL=http://ingrid-codelist-repo:8080
       - CODELIST_REPO_USER=admin
       - CODELIST_REPO_PASSWORD=${CODELIST_PASSWORD}
       - APP_HOST_URL=http://${HOST}/ige-ng
@@ -196,7 +196,6 @@ services:
       - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
       - KC_HTTP_RELATIVE_PATH=/keycloak
       - KC_HOSTNAME=http://${HOST}/keycloak
-     #- KC_PROXY=edge
       - KC_HTTP_ENABLED=true
       - KC_PROXY_HEADERS=xforwarded
         #- KC_HOSTNAME_STRICT_HTTPS=false
@@ -213,7 +212,7 @@ services:
       - IGE_SUPER_USER_PASSWORD=admin
       - IGE_SUPER_USER_FIRSTNAME=Super
       - IGE_SUPER_USER_LASTNAME=User
-      - IGE_SUPER_USER_EMAIL=
+      - IGE_SUPER_USER_EMAIL=super.user@wemove.com
       #- ORGANIZATION="${HOST} Ministerium für Umwelt, Energie und Klimaschutz"
       #- IMPRINT_URL=http://${HOST}/impressum
       #- PRIVACY_NOTE_URL=http://${HOST}/datenschutzbestimmung
