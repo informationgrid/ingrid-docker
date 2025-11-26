@@ -4,8 +4,16 @@ server {
 
     rewrite_log on;
 
-    listen 80 default_server;
-    listen [::]:80 default_server;
+#    listen 80 default_server;
+#    listen [::]:80 default_server;
+
+    listen 443 ssl;
+    server_name ingrid.localhost 127.0.0.1;
+
+    ssl_certificate     /etc/nginx/ssl/dummy.crt;
+    ssl_certificate_key /etc/nginx/ssl/dummy.key;
+
+
 
     proxy_set_header X-Forwarded-Proto http;
     proxy_set_header Host ingrid.localhost;
@@ -169,12 +177,27 @@ server {
 }
 
 server {
-    listen 443 ssl;
+    listen 80;
+    listen [::]:80;
+
     server_name ingrid.localhost 127.0.0.1;
 
-    ssl_certificate     /etc/nginx/ssl/dummy.crt;
-    ssl_certificate_key /etc/nginx/ssl/dummy.key;
+    location /.well-known/acme-challenge/ {
+        root /var/www;
+    }
 
-    
-    return 301 http://$host$request_uri;
+    location / {
+        return 301 https://$host$request_uri;
+    }
 }
+
+#server {
+#    listen 443 ssl;
+#    server_name ingrid.localhost 127.0.0.1;
+#
+#    ssl_certificate     /etc/nginx/ssl/dummy.crt;
+#    ssl_certificate_key /etc/nginx/ssl/dummy.key;
+##
+#    
+#    return 301 http://$host$request_uri;
+#}
