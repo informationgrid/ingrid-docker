@@ -1,6 +1,6 @@
 services:
   postgres-db:
-    image: postgres:17.4
+    image: postgres:17
     restart: unless-stopped
     environment:
       - POSTGRES_USER=${POSTGRES_DB_ADMIN}
@@ -31,7 +31,7 @@ services:
       - ./nginx/conf.d:/etc/nginx/templates
       - ./nginx/ssl:/etc/nginx/ssl/
       - ./ingrid-editor/upload:/tmp/ingrid/upload-ige-ng
-      - ./grav:/var/www/portal
+      - grav:/var/www/portal
       - ./portal/user:/var/www/portal/user
     ports:
       - 80:80
@@ -115,7 +115,7 @@ services:
       - informationgrid-network
 
   ingrid-editor:
-    image: docker-registry.wemove.com/ingrid-ige-ng:8.1.1.1
+    image: docker-registry.wemove.com/ingrid-ige-ng:8.1.2
    # Workaround build to deploy inside an intranet. Not neccessary if using CA's which are already in the JVM Truststore
    #build:
    #  context: ./ige-ng/build
@@ -130,19 +130,20 @@ services:
     environment:
       - TZ=Europe/Berlin
       - CONTEXT_PATH=/ige-ng
-      - BROKER_URL=ws://${HOST}/ige-ng/ws
+      - BROKER_URL=wss://${HOST}/ige-ng/ws
       - _JAVA_OPTIONS=-Xmx2g -Dstorage.diskCache.bufferSize=256 -Dspring.profiles.active=elasticsearch,ingrid,ibus,codelist-repo
       #- JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8699
       #- KEYCLOAK_CLIENT_ID=ige-ng-backend
       - DATABASE_HOST=postgres-db
       - DATABASE_USERNAME=${POSTGRES_DB_ADMIN}
       - DATABASE_PASSWORD=${POSTGRES_DB_PASSWORD}
-      - KEYCLOAK_URL=http://${HOST}/keycloak
+      - KEYCLOAK_URL=http://keycloak:8080/keycloak
+      - KEYCLOAK_URL_FRONTEND=https://${HOST}/keycloak
       #- KEYCLOAK_URL_FRONTEND=http://${HOST}/keycloak
       - CODELIST_REPO_URL=http://ingrid-codelist-repo:8080
       - CODELIST_REPO_USER=admin
       - CODELIST_REPO_PASSWORD=${CODELIST_PASSWORD}
-      - APP_HOST_URL=http://${HOST}/ige-ng
+      - APP_HOST_URL=https://${HOST}/ige-ng
       - WAIT_FOR_PARAM=postgres-db:5432
       - MAIL_FROM=
       - KEYCLOAK_BACKEND_USER=ige
@@ -191,11 +192,11 @@ services:
     depends_on:
       - postgres-db
     environment:
-      - SIMPLE_SECURITY=true
+      #- SIMPLE_SECURITY=true
       - KC_BOOTSTRAP_ADMIN_USERNAME=admin
       - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
       - KC_HTTP_RELATIVE_PATH=/keycloak
-      - KC_HOSTNAME=http://${HOST}/keycloak
+      - KC_HOSTNAME=https://${HOST}/keycloak
       - KC_HTTP_ENABLED=true
       - KC_PROXY_HEADERS=xforwarded
         #- KC_HOSTNAME_STRICT_HTTPS=false
@@ -204,7 +205,7 @@ services:
       - KC_DB_USERNAME=${POSTGRES_DB_ADMIN}
       - KC_DB_PASSWORD=${POSTGRES_DB_PASSWORD}
       - MAIL_SMTP=mailrelay
-      - MAIL_FROM=
+      - MAIL_FROM=admin@wemove.com
      #- IGE_CLIENT_ID=ige-ng
      #- IGE_FRONTEND_URL=http://${HOST}/ige-ng
      # - IGE_CLIENT_REDIRECT_URI=
@@ -236,15 +237,12 @@ services:
       - informationgrid-network
 
   ingrid-portal:
-    image: docker-registry.wemove.com/ingrid-portal:8.1.0
+    image: docker-registry.wemove.com/ingrid-portal:8.1.2
     restart: unless-stopped
     volumes:
-      - ./grav:/var/www/portal
+      - grav:/var/www/portal
       - ./_data/logs/portal:/var/www/portal/logs
       - ./portal/user/:/var/www/portal/user/
-      #- ./portal/user/accounts:/var/www/portal/user/accounts
-      #- ./portal/user/config:/var/www/portal/user/config
-      #- ./portal/user/pages:/var/www/portal/user/pages
     environment:
       - GRAV_FOLDER=portal
       - INGRID_API=http://ingrid-api:8080/
@@ -256,11 +254,16 @@ services:
       - ENABLE_SCHEDULER_RSS=false
       - ENABLE_MVIS=false
       - ENABLE_FOOTER_BANNER=true
+      #- THEME=ingrid
+      - ADMIN_EMAIL=admin@wemove.com
+      - ADMIN_FULL_NAME=admin
+      - ADMIN_PASSWORD=admin
+
     networks:
       - informationgrid-network
 
   ingrid-mapclient:
-    image: docker-registry.wemove.com/ingrid-webmap-client:8.1.0
+    image: docker-registry.wemove.com/ingrid-webmap-client:8.1.2
     restart: unless-stopped
     volumes:
       - ./map/application.override.properties:/usr/local/tomcat/webapps/ingrid-webmap-client/WEB-INF/classes/application.override.properties
@@ -363,6 +366,8 @@ services:
           memory: 256M
     networks:
       - informationgrid-network
+volumes:
+  grav:
 
 networks:
   informationgrid-network:
