@@ -99,14 +99,12 @@ services:
       - CODELIST_USERNAME=admin
       - CODELIST_PASSWORD=${CODELIST_PASSWORD}
       - IBUS_PASSWORD=${ADMIN_GUI_PASSWORD_HASH}
-      - JAVA_OPTS=-Xmx384m
       - ELASTIC_HOSTS=elastic:9200
     volumes:
       - ./_data/logs/ibus:/opt/ingrid/ingrid-ibus/logs
       - ./ibus/conf/activatedIplugs.properties:/opt/ingrid/ingrid-ibus/conf/activatedIplugs.properties
     #ports:
     #  - 127.0.0.1:12300:9900
-    command: ["sh", "wait-for-elasticsearch.sh", "elastic:9200", "/bin/sh start.sh start"]
     deploy:
       resources:
         limits:
@@ -115,7 +113,7 @@ services:
       - informationgrid-network
 
   ingrid-editor:
-    image: docker-registry.wemove.com/ingrid-ige-ng:8.1.2
+    image: docker-registry.wemove.com/ingrid-ige-ng:8.1.3
    # Workaround build to deploy inside an intranet. Not neccessary if using CA's which are already in the JVM Truststore
    #build:
    #  context: ./ige-ng/build
@@ -137,8 +135,9 @@ services:
       - DATABASE_HOST=postgres-db
       - DATABASE_USERNAME=${POSTGRES_DB_ADMIN}
       - DATABASE_PASSWORD=${POSTGRES_DB_PASSWORD}
-      - KEYCLOAK_URL=http://keycloak:8080/keycloak
-      - KEYCLOAK_URL_FRONTEND=https://${HOST}/keycloak
+      #- KEYCLOAK_URL=http://keycloak:8080/keycloak
+      - KEYCLOAK_URL=https://${HOST}/keycloak
+      #- KEYCLOAK_URL_FRONTEND=https://${HOST}/keycloak
       #- KEYCLOAK_URL_FRONTEND=http://${HOST}/keycloak
       - CODELIST_REPO_URL=http://ingrid-codelist-repo:8080
       - CODELIST_REPO_USER=admin
@@ -147,7 +146,7 @@ services:
       - WAIT_FOR_PARAM=postgres-db:5432
       - MAIL_FROM=
       - KEYCLOAK_BACKEND_USER=ige
-      - KEYCLOAK_BACKEND_USER_PASSWORD=admin
+      - KEYCLOAK_BACKEND_USER_PASSWORD=Un33dtwelve%
       - SHOW_SWAGGER_UI=true
       - APP_HELP_LINK=https://metaver-bedienungsanleitung.readthedocs.io
       #- ALLOW_OVERWRITE_ON_VERSION_CONFLICT=true
@@ -199,6 +198,7 @@ services:
       - KC_HOSTNAME=https://${HOST}/keycloak
       - KC_HTTP_ENABLED=true
       - KC_PROXY_HEADERS=xforwarded
+      - KC_PROXY=edge
         #- KC_HOSTNAME_STRICT_HTTPS=false
       - KC_DB=postgres
       - KC_DB_URL_HOST=postgres-db
@@ -210,7 +210,7 @@ services:
      #- IGE_FRONTEND_URL=http://${HOST}/ige-ng
      # - IGE_CLIENT_REDIRECT_URI=
       - IGE_SUPER_USER_LOGIN=ige
-      - IGE_SUPER_USER_PASSWORD=admin
+      - IGE_SUPER_USER_PASSWORD=Un33dtwelve%
       - IGE_SUPER_USER_FIRSTNAME=Super
       - IGE_SUPER_USER_LASTNAME=User
       - IGE_SUPER_USER_EMAIL=super.user@wemove.com
@@ -237,7 +237,7 @@ services:
       - informationgrid-network
 
   ingrid-portal:
-    image: docker-registry.wemove.com/ingrid-portal:8.1.2
+    image: docker-registry.wemove.com/ingrid-portal:8.1.3
     restart: unless-stopped
     volumes:
       - grav:/var/www/portal
