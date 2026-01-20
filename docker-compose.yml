@@ -40,7 +40,7 @@ services:
       - informationgrid-network
 
   ingrid-codelist-repo:
-    image: docker-registry.wemove.com/ingrid-codelist-repository:8.1.0
+    image: docker-registry.wemove.com/ingrid-codelist-repository:8.2.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -89,7 +89,7 @@ services:
       - informationgrid-network
 
   ingrid-ibus:
-    image: docker-registry.wemove.com/ingrid-ibus:8.1.0
+    image: docker-registry.wemove.com/ingrid-ibus:8.2.0
     depends_on:
       - elastic
     restart: unless-stopped
@@ -113,7 +113,7 @@ services:
       - informationgrid-network
 
   ingrid-editor:
-    image: docker-registry.wemove.com/ingrid-ige-ng:8.1.3
+    image: docker-registry.wemove.com/ingrid-ige-ng:8.2.0
    # Workaround build to deploy inside an intranet. Not neccessary if using CA's which are already in the JVM Truststore
    #build:
    #  context: ./ige-ng/build
@@ -224,7 +224,7 @@ services:
 
 
   ingrid-api:
-    image: docker-registry.wemove.com/ingrid-api:8.1.0
+    image: docker-registry.wemove.com/ingrid-api:8.2.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -237,7 +237,7 @@ services:
       - informationgrid-network
 
   ingrid-portal:
-    image: docker-registry.wemove.com/ingrid-portal:8.1.3
+    image: docker-registry.wemove.com/ingrid-portal:8.2.0
     restart: unless-stopped
     volumes:
       - grav:/var/www/portal
@@ -263,7 +263,7 @@ services:
       - informationgrid-network
 
   ingrid-mapclient:
-    image: docker-registry.wemove.com/ingrid-webmap-client:8.1.2
+    image: docker-registry.wemove.com/ingrid-webmap-client:8.2.0
     restart: unless-stopped
     volumes:
       - ./map/application.override.properties:/usr/local/tomcat/webapps/ingrid-webmap-client/WEB-INF/classes/application.override.properties
@@ -272,7 +272,7 @@ services:
       - informationgrid-network
 
   ingrid-harvester:
-    image: docker-registry.wemove.com/ingrid-harvester:8.1.0
+    image: docker-registry.wemove.com/ingrid-harvester:8.2.0
     restart: unless-stopped
     depends_on:
       - postgres-db
@@ -318,7 +318,7 @@ services:
       - informationgrid-network
 
   ingrid-iplug-sns:
-    image: docker-registry.wemove.com/ingrid-iplug-sns:8.1.0
+    image: docker-registry.wemove.com/ingrid-iplug-sns:8.2.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -334,7 +334,7 @@ services:
       - informationgrid-network
 
   ingrid-interface-csw:
-    image: docker-registry.wemove.com/ingrid-interface-csw:8.1.0
+    image: docker-registry.wemove.com/ingrid-interface-csw:8.2.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -351,7 +351,7 @@ services:
       - informationgrid-network
 
   ingrid-interface-search:
-    image: docker-registry.wemove.com/ingrid-interface-search:8.1.1
+    image: docker-registry.wemove.com/ingrid-interface-search:8.2.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
