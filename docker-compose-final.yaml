@@ -1,0 +1,9 @@
+
+services:
+  adminer:
+    environment:
+      - TZ=Europe/Berlin
+    image: adminer
+    networks:
+      ingrid-network: null
+    restart: unless-stopped
