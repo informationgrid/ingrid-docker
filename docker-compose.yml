@@ -1,374 +1,62 @@
+include:
+  - _base/common-base.yml
+
 services:
-  postgres-db:
-    image: postgres:17
-    restart: unless-stopped
-    environment:
-      - POSTGRES_USER=${POSTGRES_DB_ADMIN}
-      - POSTGRES_PASSWORD=${POSTGRES_DB_PASSWORD}
+  db:
     volumes:
       - ./_data/postgres-db/:/var/lib/postgresql/data
       - ./_data/init-db:/docker-entrypoint-initdb.d
-    networks:
-      - informationgrid-network
 
-  adminer:
-    image: adminer
-    restart: unless-stopped
-    environment:
-      - ADMINER_DEFAULT_DB_DRIVER=pgsql
-    networks:
-      - informationgrid-network
-
-  nginx:
-    image: nginx:1.28
-    restart: unless-stopped
-    environment:
-      - TZ=Europe/Berlin
-      - NGINX_HOST=${HOST}
-    volumes:
-      - ./nginx/www:/var/www
-      - ./nginx/auth:/etc/nginx/auth
-      - ./nginx/conf.d:/etc/nginx/templates
-      - ./nginx/ssl:/etc/nginx/ssl/
-      - ./ingrid-editor/upload:/tmp/ingrid/upload-ige-ng
-      - grav:/var/www/portal
-      - ./portal/user:/var/www/portal/user
-    ports:
-      - 80:80
-      - 443:443
-    networks:
-      - informationgrid-network
-
-  ingrid-codelist-repo:
-    image: docker-registry.wemove.com/ingrid-codelist-repository:8.2.0
-    restart: unless-stopped
-    environment:
-      - TZ=Europe/Berlin
-      - forceUpdateCodelists=true
-      - CREDENTIALS_ADMIN=admin=>${CODELIST_PASSWORD}
+  codelist-repo:
     volumes:
       - ./_data/logs/codelist-repo:/opt/ingrid/ingrid-codelist-repository/logs
       - ./_data/codelist-repository:/opt/ingrid/ingrid-codelist-repository/data
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-    networks:
-      - informationgrid-network
 
   elastic:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.14.1
-    restart: unless-stopped
-    environment:
-      - TZ=Europe/Berlin
-      - cluster.name=ingrid
-      - http.host=0.0.0.0
-      - transport.host=0.0.0.0
-      - http.cors.enabled=true
-      - "ES_JAVA_OPTS=-Xmx4g -Dlog4j2.formatMsgNoLookups=true"
-      - "LOG4J_FORMAT_MSG_NO_LOOKUPS=true"
-      - xpack.security.enabled=false
-      - xpack.ml.enabled=false
-      - discovery.type=single-node
-      - ingest.geoip.downloader.enabled=false
-      - cluster.routing.allocation.disk.threshold_enabled=false
-      
-      # make esdata directory writable to container process
-      # to obtain the user 'exec bash' into container
-      # the adapt the rights of esdata
-      # mkdir -p elastic/_data/esdata
-      # chown 1000 elastic/_data/esdata
-    volumes:  
+    volumes:
       - ./_data/elasticsearch_data:/usr/share/elasticsearch/data
-    
-    deploy:
-      resources:
-        limits:
-          memory: 1024M
-    networks:
-      - informationgrid-network
 
-  ingrid-ibus:
-    image: docker-registry.wemove.com/ingrid-ibus:8.2.0
-    depends_on:
-      - elastic
-    restart: unless-stopped
-    environment:
-      - TZ=Europe/Berlin
-      - CODELIST_URL=http://ingrid-codelist-repo:8080
-      - CODELIST_USERNAME=admin
-      - CODELIST_PASSWORD=${CODELIST_PASSWORD}
-      - IBUS_PASSWORD=${ADMIN_GUI_PASSWORD_HASH}
-      - ELASTIC_HOSTS=elastic:9200
+  ibus:
     volumes:
       - ./_data/logs/ibus:/opt/ingrid/ingrid-ibus/logs
       - ./ibus/conf/activatedIplugs.properties:/opt/ingrid/ingrid-ibus/conf/activatedIplugs.properties
-    #ports:
-    #  - 127.0.0.1:12300:9900
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-    networks:
-      - informationgrid-network
 
-  ingrid-editor:
-    image: docker-registry.wemove.com/ingrid-ige-ng:8.2.0
-   # Workaround build to deploy inside an intranet. Not neccessary if using CA's which are already in the JVM Truststore
-   #build:
-   #  context: ./ige-ng/build
-   #  args: 
-   #    - IGE_NG_VERSION=8.1.1.1
-   #    - CERT_FILE_NAME_1=fullchain.pem
-   #    - CERT_FILE_NAME_2=privkey.pem
-    restart: unless-stopped
-    depends_on:
-      - postgres-db
-    user: "1000:1000"
-    environment:
-      - TZ=Europe/Berlin
-      - CONTEXT_PATH=/ige-ng
-      - BROKER_URL=wss://${HOST}/ige-ng/ws
-      - _JAVA_OPTIONS=-Xmx2g -Dstorage.diskCache.bufferSize=256 -Dspring.profiles.active=elasticsearch,ingrid,ibus,codelist-repo
-      #- JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8699
-      #- KEYCLOAK_CLIENT_ID=ige-ng-backend
-      - DATABASE_HOST=postgres-db
-      - DATABASE_USERNAME=${POSTGRES_DB_ADMIN}
-      - DATABASE_PASSWORD=${POSTGRES_DB_PASSWORD}
-      #- KEYCLOAK_URL=http://keycloak:8080/keycloak
-      - KEYCLOAK_URL=https://${HOST}/keycloak
-      #- KEYCLOAK_URL_FRONTEND=https://${HOST}/keycloak
-      #- KEYCLOAK_URL_FRONTEND=http://${HOST}/keycloak
-      - CODELIST_REPO_URL=http://ingrid-codelist-repo:8080
-      - CODELIST_REPO_USER=admin
-      - CODELIST_REPO_PASSWORD=${CODELIST_PASSWORD}
-      - APP_HOST_URL=https://${HOST}/ige-ng
-      - WAIT_FOR_PARAM=postgres-db:5432
-      - MAIL_FROM=
-      - KEYCLOAK_BACKEND_USER=ige
-      - KEYCLOAK_BACKEND_USER_PASSWORD=Un33dtwelve%
-      - SHOW_SWAGGER_UI=true
-      - APP_HELP_LINK=https://metaver-bedienungsanleitung.readthedocs.io
-      #- ALLOW_OVERWRITE_ON_VERSION_CONFLICT=true
-      #- APP_INSTANCE_ID=ige-ng
-      #- APP_PROXY_URL=""
-      #- ENABLE_AI=false
-      #- KEYCLOAK_REALM
-      #- KEYCLOAK_RESOURCE=ige-ng-frontend
-      #- OPEN_AI_TOKEN=""
-      #- MAIL_HOST=mailrelay
-      #- MAP_TILE_URL=https://gdi-niederrhein-geodienste.de/openstreetmap/{z}/{x}/{y}.png
-      #- MAP_ATTRIBUTION=&copy; <a href="https://openstreetmap.de" target="_blank">OpenStreetMap</a> contributors
-      #- MAP_WMS_URL=
-      #- MAP_WMS_LAYERS=
-      #- MATOMO_URL=
-      #- MATOMO_SITE_ID=
-      #- NOMINATIM_URL=
-      #- SWAGGER_SERVERS=http://localhost:8550::Local Server,https://ige-ng.informationgrid.eu/::Test Server
-      #- SERVER_PORT=80
-      #- SHOW_ACCESSIBILITY_LINK=false
-      #- SHOW_TEST_BADGE=false
-      #- VIRUSSCAN_MAIL_RECEIVER=
-      #- UPLOAD_EXTERNAL_URL=/documents/
-      #- VIRUSSCAN_SCHEDULE=0 0 2 * * *
-      #- WAIT_FOR_PARAM_TIMEOUT=
-      #- ZABBIX_API_KEY=
-      #- ZABBIX_API_URL=
-      #- ZABBIX_CATALOGS=
-      #- ZABBIX_CHECK_COUNT=3
-      #- ZABBIX_CHECK_DELAY=8h
-      #- ZABBIX_DETAIL_URL_TEMPLATE=
-      #- ZABBIX_UPLOAD_URL=
-    networks:
-      - informationgrid-network
+  editor:
     volumes:
       - ./_data/ingrid-editor/upload:/tmp/ingrid/upload-ingrid-editor
       - ./ingrid-editor/codelists:/codelists
 
-  keycloak:
-    image: docker-registry.wemove.com/keycloak:26.4.2-1
-    restart: unless-stopped
-    depends_on:
-      - postgres-db
-    environment:
-      #- SIMPLE_SECURITY=true
-      - KC_BOOTSTRAP_ADMIN_USERNAME=admin
-      - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
-      - KC_HTTP_RELATIVE_PATH=/keycloak
-      - KC_HOSTNAME=https://${HOST}/keycloak
-      - KC_HTTP_ENABLED=true
-      - KC_PROXY_HEADERS=xforwarded
-      - KC_PROXY=edge
-        #- KC_HOSTNAME_STRICT_HTTPS=false
-      - KC_DB=postgres
-      - KC_DB_URL_HOST=postgres-db
-      - KC_DB_USERNAME=${POSTGRES_DB_ADMIN}
-      - KC_DB_PASSWORD=${POSTGRES_DB_PASSWORD}
-      - MAIL_SMTP=mailrelay
-      - MAIL_FROM=admin@wemove.com
-     #- IGE_CLIENT_ID=ige-ng
-     #- IGE_FRONTEND_URL=http://${HOST}/ige-ng
-     # - IGE_CLIENT_REDIRECT_URI=
-      - IGE_SUPER_USER_LOGIN=ige
-      - IGE_SUPER_USER_PASSWORD=Un33dtwelve%
-      - IGE_SUPER_USER_FIRSTNAME=Super
-      - IGE_SUPER_USER_LASTNAME=User
-      - IGE_SUPER_USER_EMAIL=super.user@wemove.com
-      #- ORGANIZATION="${HOST} Ministerium für Umwelt, Energie und Klimaschutz"
-      #- IMPRINT_URL=http://${HOST}/impressum
-      #- PRIVACY_NOTE_URL=http://${HOST}/datenschutzbestimmung
-      # - ADDITIONAL_REDIRECT_URIS=http://localhost:4300/*
-
-    networks:
-      - informationgrid-network
-
-
-  ingrid-api:
-    image: docker-registry.wemove.com/ingrid-api:8.2.0
-    restart: unless-stopped
-    environment:
-      - TZ=Europe/Berlin
-      - ES_HOST=elastic
-      - ES_USERNAME=elastic
-      - ES_PASSWORD=admin
-      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,address=*:8476,server=y,suspend=n
-    
-    networks:
-      - informationgrid-network
-
-  ingrid-portal:
-    image: docker-registry.wemove.com/ingrid-portal:8.2.0
-    restart: unless-stopped
+  portal:
     volumes:
       - grav:/var/www/portal
       - ./_data/logs/portal:/var/www/portal/logs
       - ./portal/user/:/var/www/portal/user/
-    environment:
-      - GRAV_FOLDER=portal
-      - INGRID_API=http://ingrid-api:8080/
-      - CODELIST_API=http://ingrid-codelist-repo:8080/rest/getCodelists
-      - CODELIST_USER=admin
-      - CODELIST_PASS=admin
-      - MARKDOWN_AUTO_LINE_BREAKS=true
-      #- THEME_COPY_PAGES_INIT=true
-      - ENABLE_SCHEDULER_RSS=false
-      - ENABLE_MVIS=false
-      - ENABLE_FOOTER_BANNER=true
-      #- THEME=ingrid
-      - ADMIN_EMAIL=admin@wemove.com
-      - ADMIN_FULL_NAME=admin
-      - ADMIN_PASSWORD=admin
 
-    networks:
-      - informationgrid-network
-
-  ingrid-mapclient:
-    image: docker-registry.wemove.com/ingrid-webmap-client:8.2.0
-    restart: unless-stopped
+  mapclient:
     volumes:
       - ./map/application.override.properties:/usr/local/tomcat/webapps/ingrid-webmap-client/WEB-INF/classes/application.override.properties
       - ./map/WebmapClientData:/opt/ingrid/WebmapClientData
-    networks:
-      - informationgrid-network
 
-  ingrid-harvester:
-    image: docker-registry.wemove.com/ingrid-harvester:8.2.0
-    restart: unless-stopped
-    depends_on:
-      - postgres-db
-    environment:
-     - NODE_ENV=production
-     #- BASE_URL=/harvester/
-     - IMPORTER_PROFILE=ingrid
-     - ADMIN_PASSWORD=admin
-     - ELASTIC_URL=http://elastic:9200
-     - ELASTIC_VERSION=8
-     - ELASTIC_USER=elastic
-     - ELASTIC_PASSWORD=
-     - ELASTIC_ALIAS=harvester-alias
-     - ELASTIC_PREFIX=harvester_
-     - DB_URL=postgres-db
-     - DB_PORT=5432
-     - DB_NAME=harvester
-     - DB_USER=${POSTGRES_DB_ADMIN}
-     - DB_PASSWORD=${POSTGRES_DB_PASSWORD}
+  harvester:
     volumes:
-       - /etc/localtime:/etc/localtime:ro
-       - ./harvester/config/config.json:/opt/ingrid/harvester/server/config.json
-       - ./harvester/config/client_config.json:/opt/ingrid/harvester/server/app/webapp/assets/config.json
-    networks:
-      - informationgrid-network
+      - /etc/localtime:/etc/localtime:ro
+      - ./harvester/config/config.json:/opt/ingrid/harvester/server/config.json
+      - ./harvester/config/client_config.json:/opt/ingrid/harvester/server/app/webapp/assets/config.json
 
-  mailrelay:
-    image: simenduev/postfix-relay:1.4.0
-    restart: unless-stopped
-    environment:
-      - TZ=Europe/Berlin
-      - SMTP_HOST=
-      - SMTP_PORT=587
-      - SMTP_LOGIN=
-      - SMTP_PASSWORD=
-      - ACCEPTED_NETWORKS=192.168.0.0/16 172.16.0.0/12 10.0.0.0/8
-      - USE_TLS=yes
-    logging:
-      driver: journald
-      options:
-        tag: "docker {{.Name}}"
-    networks:
-      - informationgrid-network
-
-  ingrid-iplug-sns:
-    image: docker-registry.wemove.com/ingrid-iplug-sns:8.2.0
-    restart: unless-stopped
-    environment:
-      - TZ=Europe/Berlin
-    volumes:
-      - ./_data/logs/sns:/opt/ingrid/ingrid-iplug-sns/logs
-      - ./iplug-sns/conf/config.override.properties:/opt/ingrid/ingrid-iplug-sns/conf/config.override.properties
-      - ./iplug-sns/conf/spring/external-services.xml:/opt/ingrid/ingrid-iplug-sns/conf/spring/external-services.xml
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-    networks:
-      - informationgrid-network
-
-  ingrid-interface-csw:
-    image: docker-registry.wemove.com/ingrid-interface-csw:8.2.0
-    restart: unless-stopped
-    environment:
-      - TZ=Europe/Berlin
+  interface-csw:
     volumes:
       - ./_data/logs/interface-csw:/opt/ingrid/ingrid-interface-csw/logs
       - ./_data/interface-csw/instances:/opt/ingrid/ingrid-interface-csw/instances
       - ./interface-csw/conf/config.override.properties:/opt/ingrid/ingrid-interface-csw/conf/config.override.properties
       - ./interface-csw/conf/csw-t.realm.properties:/opt/ingrid/ingrid-interface-csw/conf/csw-t.realm.properties
-    deploy:
-      resources:
-        limits:
-          memory: 384M
-    networks:
-      - informationgrid-network
 
-  ingrid-interface-search:
-    image: docker-registry.wemove.com/ingrid-interface-search:8.2.0
-    restart: unless-stopped
-    environment:
-      - TZ=Europe/Berlin
+  interface-search:
     volumes:
       - ./_data/logs/interface-search:/opt/ingrid/ingrid-interface-search/logs
       - ./interface-search/interface-search.properties:/opt/ingrid/ingrid-interface-search/conf/interface-search.properties
       - ./interface-search/descriptor.xml:/opt/ingrid/ingrid-interface-search/conf/descriptor.xml
       - ./interface-search/communication.xml:/opt/ingrid/ingrid-interface-search/conf/communication.xml
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-    networks:
-      - informationgrid-network
+
+
 volumes:
   grav:
-
-networks:
-  informationgrid-network:
-    driver: "bridge"

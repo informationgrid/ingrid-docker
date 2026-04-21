@@ -1,4 +1,5 @@
 .env
+!_base/.env
 *.bak
 
 # intellij

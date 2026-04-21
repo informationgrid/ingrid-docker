@@ -1,0 +1,364 @@
+x-default-service: &default-service
+  restart: unless-stopped
+  environment:
+    - TZ=Europe/Berlin
+  networks:
+    - ingrid-network
+
+x-default-env: &default-env
+  TZ: Europe/Berlin
+
+services:
+
+  ###########################
+  # InGrid - services
+  ###########################
+  codelist-repo:
+    <<: *default-service
+    profiles:
+      - codelist
+    image: docker-registry.wemove.com/ingrid-codelist-repository:${CODELIST_VERSION}
+    environment:
+      <<: *default-env
+      forceUpdateCodelists: true
+      CREDENTIALS_ADMIN: ${CODELIST_ADMIN_CREDENTIALS:?}
+
+  ibus:
+    <<: *default-service
+    image: docker-registry.wemove.com/ingrid-ibus:${IBUS_VERSION}
+    depends_on:
+      - elastic
+    environment:
+      <<: *default-env
+      IBUS_PASSWORD: ${IBUS_PASSWORD:?}
+      CODELIST_URL: http://codelist-repo:8080
+      CODELIST_USERNAME: ${CODELIST_USERNAME:-}
+      CODELIST_PASSWORD: ${CODELIST_PASSWORD:-}
+      ELASTIC_HOSTS: elastic:9200
+      ELASTIC_USERNAME: ${ELASTIC_USERNAME:-elastic}
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-}
+      JAVA_OPTS: -Xmx384m
+      SESSION_COOKIE_PATH: /ibus-gui
+      SERVER_CONTEXT_PATH: /ibus-gui
+
+  sns:
+    <<: *default-service
+    profiles:
+      - sns
+    image: docker-registry.wemove.com/ingrid-iplug-sns:${IPLUG_SNS_VERSION}
+    environment:
+      <<: *default-env
+
+  se:
+    <<: *default-service
+    profiles:
+      - iplug_se
+    image: docker-registry.wemove.com/ingrid-iplug-se:${IPLUG_SE_VERSION}
+    depends_on:
+      - elastic
+    environment:
+      <<: *default-env
+      ELASTIC_HOSTS: elastic:9200
+      NETWORK_HOST: elastic
+      SESSION_COOKIE_PATH: /iplug-admin-se
+
+  ingrid-server-opensearch:
+    <<: *default-service
+    profiles:
+      - server-opensearch
+    image: docker-registry.wemove.com/ingrid-server-opensearch:${SERVER_OPENSEARCH_VERSION}
+    environment:
+      <<: *default-env
+
+  interface-csw:
+    <<: *default-service
+    profiles:
+      - interface-csw
+    image: docker-registry.wemove.com/ingrid-interface-csw:${INTERFACE_CSW_VERSION}
+    environment:
+      <<: *default-env
+
+  interface-search:
+    <<: *default-service
+    profiles:
+      - interface-search
+    image: docker-registry.wemove.com/ingrid-interface-search:${INTERFACE_SEARCH_VERSION}
+    environment:
+      <<: *default-env
+
+  blp:
+    <<: *default-service
+    profiles:
+      - blp
+    image: docker-registry.wemove.com/ingrid-iplug-blp:${IPLUG_BLP_VERSION}
+    environment:
+      SERVER_CONTEXT_PATH: /iplug-admin-blp
+    depends_on:
+      - elastic
+
+  csw-dsc:
+    <<: *default-service
+    image: docker-registry.wemove.com/ingrid-iplug-csw-dsc:${IPLUG_CSW_VERSION}
+    depends_on:
+      - elastic
+    environment:
+      <<: *default-env
+      ELASTIC_HOSTS: elastic:9200
+
+  harvester:
+    <<: *default-service
+    profiles:
+      - harvester
+    image: docker-registry.wemove.com/ingrid-harvester:${HARVESTER_VERSION}
+    environment:
+      <<: *default-env
+      IMPORTER_PROFILE: ingrid
+      BASE_URL: /harvester/
+      ADMIN_PASSWORD: ${HARVESTER_ADMIN_PASSWORD:?}
+      DB_CONNECTION_STRING:
+      DB_URL: db
+      DB_NAME: ${HARVESTER_DB_NAME:-admin}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      ELASTIC_URL: http://elastic:9200
+      ELASTIC_VERSION: 8
+      ELASTIC_USER: ${ELASTIC_USER:-elastic}
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD}
+      ELASTIC_ALIAS: ingrid
+      ELASTIC_INDEX: harvester-index
+      ELASTIC_PREFIX:
+      ELASTIC_NUM_REPLICAS: 0
+      ELASTIC_NUM_SHARDS: 1
+      KEYCLOAK_AUTH_SERVER_URL: http://${HOST_URL}/keycloak
+      KEYCLOAK_CREDENTIALS_SECRET: ${HARVESTER_SECRET}
+      PASSPORT_ENABLED: true
+    depends_on:
+      elastic:
+        condition: service_healthy
+
+  wfs-dsc:
+    <<: *default-service
+    profiles:
+      - wfs
+    image: docker-registry.wemove.com/ingrid-iplug-wfs-dsc:${IPLUG_WFS_VERSION}
+    depends_on:
+      - elastic
+    environment:
+      <<: *default-env
+      ELASTIC_HOSTS: elastic:9200
+
+  editor:
+    <<: *default-service
+    profiles:
+      - editor
+    image: docker-registry.wemove.com/ingrid-ige-ng:${EDITOR_VERSION}
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      <<: *default-env
+      CONTEXT_PATH: /editor
+      BROKER_URL: ws://${HOST_URL}/editor/ws
+      _JAVA_OPTIONS: -Xmx1g -Dstorage.diskCache.bufferSize=256 -Dspring.profiles.active=${EDITOR_PROFILES}
+      CODELIST_REPO_URL: http://codelist-repo:8080
+      CODELIST_REPO_USER: ${CODELIST_USERNAME}
+      CODELIST_REPO_PASSWORD: ${CODELIST_PASSWORD}
+      NOMINATIM_URL: https://geocoding.geofabrik.de/72972191f3714af3933ba1512438c51d/search?q={query}\&format=json\&countrycodes={countries}
+      APP_HOST_URL: http://${HOST_URL}
+      UPLOAD_EXTERNAL_URL: http://${HOST_URL}/documents/
+      DATABASE_HOST: db
+      DATABASE_USERNAME: ${DB_USER}
+      DATABASE_PASSWORD: ${DB_PASSWORD}
+      KEYCLOAK_URL: http://${HOST_URL}/keycloak
+      KEYCLOAK_BACKEND_USER: ${KEYCLOAK_BACKEND_USER}
+      KEYCLOAK_BACKEND_USER_PASSWORD: ${KEYCLOAK_BACKEND_USER_PASSWORD}
+      APP_ACTUATOR_PERMIT_ALL: true
+      KEYCLOAK_CLIENT_SECRET: ${EDITOR_SECRET}
+
+  ingrid-api:
+    <<: *default-service
+    image: docker-registry.wemove.com/ingrid-api:${API_VERSION}
+    depends_on:
+      elastic:
+        condition: service_healthy
+    environment:
+      <<: *default-env
+      ES_HOST: elastic
+      ES_USERNAME: ${ELASTIC_USERNAME:-elastic}
+      ES_PASSWORD: ${ELASTIC_PASSWORD:-}
+
+  portal:
+    <<: *default-service
+    image: docker-registry.wemove.com/ingrid-portal:${PORTAL_VERSION}
+    depends_on:
+      - ingrid-api
+    environment:
+      <<: *default-env
+      GRAV_FOLDER: portal
+      THEME: ${PORTAL_PROFILE:?}
+      INGRID_API: http://ingrid-api:8080/
+      CSW_URL: http://${HOST_URL}/csw?REQUEST=GetRecordById&SERVICE=CSW&VERSION=2.0.2&id=
+      ADMIN_PASSWORD: ${PORTAL_ADMIN_PASSWORD:?}
+      ADMIN_EMAIL: ${PORTAL_ADMIN_EMAIL}
+      ADMIN_FULL_NAME: The Admin
+      GEO_API_URL: http://ingrid-geo-api:3000/v1/convert?exportFormat=
+      GEO_API_USER: ${GEO_API_USER:-}
+      GEO_API_PASS: ${GEO_API_PASS:-}
+      CODELIST_API: http://codelist-repo:8080/rest/getCodelists
+      CODELIST_USER: ${CODELIST_USERNAME:-}
+      CODELIST_PASS: ${CODELIST_PASSWORD:-}
+      THEME_COPY_PAGES_INIT: true
+
+  mapclient:
+    <<: *default-service
+    profiles:
+      - portal
+    image: docker-registry.wemove.com/ingrid-webmap-client:${MAPCLIENT_VERSION}
+
+  ingrid-geo-api:
+    <<: *default-service
+    profiles:
+      - portal
+    image: docker-registry.wemove.com/ingrid-geo-api:${GEO_API_VERSION}
+
+  ogcrecords:
+    <<: *default-service
+    profiles:
+      - ogcrecords
+    image: docker-registry.wemove.com/diplanung-ogcrecords
+    environment:
+      - API_URL=${API_URL:-https://localhost:8080}
+      - PORTAL_URL=${PORTAL_URL:-https://portal.diplanung.de}
+      - BASICAUTH_PASSWORD=${OGC_RECORDS_PASSWORD:?}
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/metadaten}
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=${SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT:-org.hibernate.dialect.PostgreSQLDialect}
+      - ELASTIC_URL=${ELASTIC_URL:-http://elastic:9200}
+      - ELASTIC_USER=${ELASTIC_USER:-elastic}
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - ELASTIC_ALIAS=${ELASTIC_ALIAS:-diplanung}
+      - ELASTIC_INDEX=${ELASTIC_INDEX:-diplanung-index}
+      - ELASTIC_PREFIX=${ELASTIC_PREFIX:-}
+      - ELASTIC_NUM_REPLICAS=${ELASTIC_NUM_REPLICAS:-0}
+      - ELASTIC_NUM_SHARDS=${ELASTIC_NUM_SHARDS:-1}
+    depends_on:
+      elastic:
+        condition: service_healthy
+
+  ###########################
+  # other services
+  ###########################
+
+  nginx:
+    <<: *default-service
+    image: owasp/modsecurity-crs:3.3.8-nginx-202601060501
+    restart: unless-stopped
+    depends_on:
+      - portal
+    environment:
+      - MODSEC_AUDIT_ENGINE=RelevantOnly
+      - MODSEC_AUDIT_LOG=/var/log/modsecurity/modsec_audit.log
+      - MODSEC_AUDIT_LOG_FORMAT=Native
+      - TZ=Europe/Berlin
+      - MODSEC_RULE_ENGINE=On
+
+  elastic:
+    <<: *default-service
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTIC_VERSION:?}
+    environment:
+      <<: *default-env
+      cluster.name: ingrid
+      discovery.type: single-node
+      cluster.routing.allocation.disk.threshold_enabled: false
+      http.host: 0.0.0.0
+      transport.host: 0.0.0.0
+      http.cors.enabled: true
+      ES_JAVA_OPTS: -Xms1G -Xmx1G
+      xpack.security.enabled: ${ELASTIC_SECURITY_ENABLED:-false}
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD}
+    healthcheck:
+      test: curl -s -u elastic:${ELASTIC_PASSWORD:-} http://localhost:9200 | grep -q "tagline"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  keycloak:
+    <<: *default-service
+    profiles:
+      - editor
+      - harvester
+    image: docker-registry.wemove.com/keycloak:${KEYCLOAK_VERSION}
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      <<: *default-env
+      SIMPLE_SECURITY: true
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME:?}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD:?}
+      KC_HTTP_RELATIVE_PATH: /keycloak
+      KC_HOSTNAME: http://${HOST_URL}/keycloak
+      KC_HTTP_ENABLED: true
+      KC_DB: postgres
+      KC_DB_URL_HOST: db
+      KC_DB_USERNAME: ${DB_USER}
+      KC_DB_PASSWORD: ${DB_PASSWORD}
+      KC_HEALTH_ENABLED: true
+      MAIL_SMTP: mailrelay
+      MAIL_FROM: keycloak@wemove.com
+      IGE_FRONTEND_URL: http://${HOST_URL}
+      HARVESTER_URL: http://${HOST_URL}/harvester
+      HARVESTER_SECRET: ${HARVESTER_SECRET}
+      EDITOR_URL: http://${HOST_URL}
+      EDITOR_SECRET: ${EDITOR_SECRET}
+      IGE_SUPER_USER_LOGIN: ${IGE_SUPER_USER_LOGIN}
+      IGE_SUPER_USER_PASSWORD: ${IGE_SUPER_USER_PASSWORD}
+      IGE_SUPER_USER_FIRSTNAME: Andre
+      IGE_SUPER_USER_LASTNAME: Wallat
+      IGE_SUPER_USER_EMAIL: andre.wallat@wemove.com
+    #healthcheck:
+    #  # We use curl to check the 'ready' endpoint
+    #  test: [ "CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /keycloak/health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && cat <&3 | grep -q '200 OK'" ]
+    #  interval: 10s
+    #  timeout: 5s
+    #  retries: 5
+    #  start_period: 60s # Keycloak takes a while to boot up!
+
+  db:
+    <<: *default-service
+    image: postgres:${POSTGRES_VERSION}
+    environment:
+      <<: *default-env
+      POSTGRES_USER: ${DB_USER:?}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U admin" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  adminer:
+    <<: *default-service
+    image: adminer
+
+  virusscan:
+    <<: *default-service
+    profiles:
+      - virusscan
+    image: docker-registry.wemove.com/virus-scan-service:stable
+
+  mailrelay:
+    <<: *default-service
+    profiles:
+      - mail
+    image: boky/postfix
+    environment:
+      <<: *default-env
+      RELAYHOST: ${SMTP_HOST}:${SMTP_PORT:-25}
+      ALLOWED_SENDER_DOMAINS: ${SMTP_ALLOWED_SENDER:-wemove.com}
+      POSTFIX_smtpd_recipient_restrictions: "permit_mynetworks,permit_sasl_authenticated,reject_unauth_destination"
+
+networks:
+  ingrid-network:
+    driver: "bridge"
