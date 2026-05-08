@@ -40,7 +40,7 @@ services:
       - informationgrid-network
 
   ingrid-codelist-repo:
-    image: docker-registry.wemove.com/ingrid-codelist-repository:8.2.0
+    image: docker-registry.wemove.com/ingrid-codelist-repository:8.3.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -57,7 +57,7 @@ services:
       - informationgrid-network
 
   elastic:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.14.1
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.3.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -72,15 +72,15 @@ services:
       - discovery.type=single-node
       - ingest.geoip.downloader.enabled=false
       - cluster.routing.allocation.disk.threshold_enabled=false
-      
+
       # make esdata directory writable to container process
       # to obtain the user 'exec bash' into container
       # the adapt the rights of esdata
       # mkdir -p elastic/_data/esdata
       # chown 1000 elastic/_data/esdata
-    volumes:  
+    volumes:
       - ./_data/elasticsearch_data:/usr/share/elasticsearch/data
-    
+
     deploy:
       resources:
         limits:
@@ -89,7 +89,7 @@ services:
       - informationgrid-network
 
   ingrid-ibus:
-    image: docker-registry.wemove.com/ingrid-ibus:8.2.0
+    image: docker-registry.wemove.com/ingrid-ibus:8.3.0
     depends_on:
       - elastic
     restart: unless-stopped
@@ -113,11 +113,11 @@ services:
       - informationgrid-network
 
   ingrid-editor:
-    image: docker-registry.wemove.com/ingrid-ige-ng:8.2.0
+    image: docker-registry.wemove.com/ingrid-ige-ng:8.3.0
    # Workaround build to deploy inside an intranet. Not neccessary if using CA's which are already in the JVM Truststore
    #build:
    #  context: ./ige-ng/build
-   #  args: 
+   #  args:
    #    - IGE_NG_VERSION=8.1.1.1
    #    - CERT_FILE_NAME_1=fullchain.pem
    #    - CERT_FILE_NAME_2=privkey.pem
@@ -186,7 +186,7 @@ services:
       - ./ingrid-editor/codelists:/codelists
 
   keycloak:
-    image: docker-registry.wemove.com/keycloak:26.4.2-1
+    image: docker-registry.wemove.com/keycloak:26.5.6-2
     restart: unless-stopped
     depends_on:
       - postgres-db
@@ -214,6 +214,8 @@ services:
       - IGE_SUPER_USER_FIRSTNAME=Super
       - IGE_SUPER_USER_LASTNAME=User
       - IGE_SUPER_USER_EMAIL=super.user@wemove.com
+      - HARVESTER_URL=http://${HOST}/harvester
+      - HARVESTER_SECRET=${HARVESTER_SECRET}
       #- ORGANIZATION="${HOST} Ministerium für Umwelt, Energie und Klimaschutz"
       #- IMPRINT_URL=http://${HOST}/impressum
       #- PRIVACY_NOTE_URL=http://${HOST}/datenschutzbestimmung
@@ -224,7 +226,7 @@ services:
 
 
   ingrid-api:
-    image: docker-registry.wemove.com/ingrid-api:8.2.0
+    image: docker-registry.wemove.com/ingrid-api:8.3.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -232,12 +234,12 @@ services:
       - ES_USERNAME=elastic
       - ES_PASSWORD=admin
       - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,address=*:8476,server=y,suspend=n
-    
+
     networks:
       - informationgrid-network
 
   ingrid-portal:
-    image: docker-registry.wemove.com/ingrid-portal:8.2.0
+    image: docker-registry.wemove.com/ingrid-portal:8.3.0
     restart: unless-stopped
     volumes:
       - grav:/var/www/portal
@@ -263,7 +265,7 @@ services:
       - informationgrid-network
 
   ingrid-mapclient:
-    image: docker-registry.wemove.com/ingrid-webmap-client:8.2.0
+    image: docker-registry.wemove.com/ingrid-webmap-client:8.3.0
     restart: unless-stopped
     volumes:
       - ./map/application.override.properties:/usr/local/tomcat/webapps/ingrid-webmap-client/WEB-INF/classes/application.override.properties
@@ -272,7 +274,7 @@ services:
       - informationgrid-network
 
   ingrid-harvester:
-    image: docker-registry.wemove.com/ingrid-harvester:8.2.0
+    image: docker-registry.wemove.com/ingrid-harvester:8.3.0
     restart: unless-stopped
     depends_on:
       - postgres-db
@@ -292,6 +294,8 @@ services:
      - DB_NAME=harvester
      - DB_USER=${POSTGRES_DB_ADMIN}
      - DB_PASSWORD=${POSTGRES_DB_PASSWORD}
+     - KEYCLOAK_AUTH_SERVER_URL=http://${HOST}/keycloak
+     - KEYCLOAK_CREDENTIALS_SECRET=${HARVESTER_SECRET}
     volumes:
        - /etc/localtime:/etc/localtime:ro
        - ./harvester/config/config.json:/opt/ingrid/harvester/server/config.json
@@ -317,24 +321,8 @@ services:
     networks:
       - informationgrid-network
 
-  ingrid-iplug-sns:
-    image: docker-registry.wemove.com/ingrid-iplug-sns:8.2.0
-    restart: unless-stopped
-    environment:
-      - TZ=Europe/Berlin
-    volumes:
-      - ./_data/logs/sns:/opt/ingrid/ingrid-iplug-sns/logs
-      - ./iplug-sns/conf/config.override.properties:/opt/ingrid/ingrid-iplug-sns/conf/config.override.properties
-      - ./iplug-sns/conf/spring/external-services.xml:/opt/ingrid/ingrid-iplug-sns/conf/spring/external-services.xml
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-    networks:
-      - informationgrid-network
-
   ingrid-interface-csw:
-    image: docker-registry.wemove.com/ingrid-interface-csw:8.2.0
+    image: docker-registry.wemove.com/ingrid-interface-csw:8.3.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -351,7 +339,7 @@ services:
       - informationgrid-network
 
   ingrid-interface-search:
-    image: docker-registry.wemove.com/ingrid-interface-search:8.2.0
+    image: docker-registry.wemove.com/ingrid-interface-search:8.3.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
