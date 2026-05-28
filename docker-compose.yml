@@ -40,7 +40,7 @@ services:
       - informationgrid-network
 
   ingrid-codelist-repo:
-    image: docker-registry.wemove.com/ingrid-codelist-repository:8.3.0
+    image: docker-registry.wemove.com/ingrid-codelist-repository:8.3.1  
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -113,7 +113,7 @@ services:
       - informationgrid-network
 
   ingrid-editor:
-    image: docker-registry.wemove.com/ingrid-ige-ng:8.3.0.1
+    image: docker-registry.wemove.com/ingrid-ige-ng:8.3.1
    # Workaround build to deploy inside an intranet. Not neccessary if using CA's which are already in the JVM Truststore
    #build:
    #  context: ./ige-ng/build
@@ -239,7 +239,7 @@ services:
       - informationgrid-network
 
   ingrid-portal:
-    image: docker-registry.wemove.com/ingrid-portal:8.3.0
+    image: docker-registry.wemove.com/ingrid-portal:8.3.1
     restart: unless-stopped
     volumes:
       - grav:/var/www/portal
@@ -274,7 +274,7 @@ services:
       - informationgrid-network
 
   ingrid-harvester:
-    image: docker-registry.wemove.com/ingrid-harvester:8.3.0
+    image: docker-registry.wemove.com/ingrid-harvester:8.3.1
     restart: unless-stopped
     depends_on:
       - postgres-db
