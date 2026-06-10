@@ -113,7 +113,7 @@ services:
       - informationgrid-network
 
   ingrid-editor:
-    image: docker-registry.wemove.com/ingrid-ige-ng:8.3.1
+    image: docker-registry.wemove.com/ingrid-ige-ng:8.3.1.1
    # Workaround build to deploy inside an intranet. Not neccessary if using CA's which are already in the JVM Truststore
    #build:
    #  context: ./ige-ng/build
