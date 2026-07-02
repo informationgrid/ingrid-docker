@@ -45,7 +45,7 @@ services:
       - informationgrid-network
 
   keycloak:
-    image: docker-registry.wemove.com/keycloak:26.5.6-3
+    image: docker-registry.wemove.com/keycloak:26.6.4-1
     restart: unless-stopped
     depends_on:
       - postgres-db
