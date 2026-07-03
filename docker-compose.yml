@@ -137,7 +137,7 @@ services:
   ##############################
 
   ingrid-codelist-repo:
-    image: docker-registry.wemove.com/ingrid-codelist-repository:8.3.1  
+    image: docker-registry.wemove.com/ingrid-codelist-repository:8.4.0  
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -178,7 +178,7 @@ services:
       - informationgrid-network
 
   ingrid-editor:
-    image: docker-registry.wemove.com/ingrid-ige-ng:8.3.1.1
+    image: docker-registry.wemove.com/ingrid-ige-ng:8.4.0
    # Workaround build to deploy inside an intranet. Not neccessary if using CA's which are already in the JVM Truststore
    #build:
    #  context: ./ige-ng/build
@@ -251,7 +251,7 @@ services:
       - ./ingrid-editor/codelists:/codelists
 
   ingrid-api:
-    image: docker-registry.wemove.com/ingrid-api:8.3.0
+    image: docker-registry.wemove.com/ingrid-api:8.4.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -299,7 +299,7 @@ services:
       - informationgrid-network
 
   ingrid-harvester:
-    image: docker-registry.wemove.com/ingrid-harvester:8.3.1
+    image: docker-registry.wemove.com/ingrid-harvester:8.4.0
     restart: unless-stopped
     depends_on:
       - postgres-db
@@ -329,7 +329,7 @@ services:
       - informationgrid-network
 
   ingrid-interface-csw:
-    image: docker-registry.wemove.com/ingrid-interface-csw:8.3.0
+    image: docker-registry.wemove.com/ingrid-interface-csw:8.4.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -346,7 +346,7 @@ services:
       - informationgrid-network
 
   ingrid-interface-search:
-    image: docker-registry.wemove.com/ingrid-interface-search:8.3.0
+    image: docker-registry.wemove.com/ingrid-interface-search:8.4.0
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
