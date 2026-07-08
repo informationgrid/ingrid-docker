@@ -1,7 +1,26 @@
 #!/bin/bash
 
+set -euo pipefail
+
 UNAME=$(which uname)
 GREP=$(which grep)
+
+require_sudo_auth() {
+  if ! sudo -v; then
+    printf "ERROR: sudo authentication failed. Exiting.\n" >&2
+    exit 1
+  fi
+}
+
+run_sudo() {
+  if ! sudo "$@"; then
+    printf "ERROR: sudo command failed: sudo %s\n" "$*" >&2
+    printf "If prompted, please verify your sudo password and try again.\n" >&2
+    exit 1
+  fi
+}
+
+require_sudo_auth
 
 printf "Configure sample .env\n"
 cp .env.sample .env
@@ -14,11 +33,11 @@ printf "Create database folder.\n"
 mkdir -p _data/postgres-db
 
 printf "Set permissions for default user.\n"
-sudo chown -R 1000:1000 ./_data
+run_sudo chown -R 1000:1000 ./_data
 
 printf "Copy initial sample webmapclient data.\n"
 mkdir -p map/WebmapClientData
-cp -ar map/WebmapClientData.test/* map/WebmapClientData
+cp -ar map/WebmapClientData.test/. map/WebmapClientData
 
 printf "Create dummy certificate"
 mkdir -p ./nginx/ssl/
@@ -27,18 +46,18 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./nginx/ssl/dummy.ke
 printf "Increase memory for elastic.\n"
 if [[ $($UNAME -a | $GREP -i linux) ]]; then
 sysctl vm.max_map_count
-sudo sysctl -w vm.max_map_count=262144
+run_sudo sysctl -w vm.max_map_count=262144
 fi
 
-if [[ $($UNAME -a | $GREP -i darwin) ]] then
+if [[ $($UNAME -a | $GREP -i darwin) ]]; then
 printf "Can't run these lines on a mac. Skipping.\n"
 fi
 
 printf "The installation uses docker images from a non-public docker registry.\n You can also build your own images by following the instructions in the specific ingrid repositories.\n"
-sudo docker login -u readonly -p readonly docker-registry.wemove.com &> /dev/null # password "readonly"
-sudo docker compose up -d
+run_sudo docker login -u readonly -p readonly docker-registry.wemove.com &> /dev/null # password "readonly"
+run_sudo docker compose up -d
 
 printf "First time boot requires around 60 seconds to be ready.\n\n\n"
 sleep 60
-sudo docker compose ps
+run_sudo docker compose ps
 exit 0
