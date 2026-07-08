@@ -49,7 +49,7 @@ The default installation includes all optional plugins. To disable them, comment
 
 Modify the default configuration via the components' admin-guis. The urls for them are:
 
-* <https://ingrid.localhost/admin>  : http login: admin:Adm1nAdm1n
+* <https://ingrid.localhost/admin>  : http login: admin:admin
 * <https://ingrid.localhost/ingrid-webmap-client/admin> : http login: admin:admin
 * <https://ingrid.localhost/editor> : http login ige:admin
 * <https://ingrid.localhost/keycloak> : http login admin:admin
