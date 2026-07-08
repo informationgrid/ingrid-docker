@@ -63,7 +63,7 @@ services:
       - KC_DB_PASSWORD=${POSTGRES_DB_PASSWORD}
       - MAIL_SMTP=mailrelay
       - MAIL_FROM=admin@wemove.com
-      - EDITOR_URL=https://${HOST:-ingrid.localhost}/ige-ng
+      - EDITOR_URL=https://${HOST:-ingrid.localhost}/editor
       - IGE_SUPER_USER_LOGIN=${EDITOR_ADMIN}
       - IGE_SUPER_USER_PASSWORD=${EDITOR_ADMIN_PASSWORD}
       - IGE_SUPER_USER_FIRSTNAME=Super
