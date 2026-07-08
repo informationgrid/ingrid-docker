@@ -4,8 +4,8 @@ server {
 
     rewrite_log on;
 
-#    listen 80 default_server;
-#    listen [::]:80 default_server;
+    #listen 80 default_server;
+    #listen [::]:80 default_server;
 
     listen 443 ssl;
     server_name ingrid.localhost 127.0.0.1;
@@ -90,7 +90,7 @@ server {
         proxy_redirect http://$host/csw http://$host/csw;
     }
 
-    location /ige-ng {
+    location /editor {
 
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
