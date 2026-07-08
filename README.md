@@ -1,13 +1,12 @@
 # InGrid Sample Installation
 
 This installation is not for production. It intended use is to get an impression of the functionality.
-This README covers only configuration for a local test case. The Editor (and Keycloak) require additional configuration to make this services production ready.
 
-Clone this repository  and execute the `start_demo_nossl.sh` script. It might ask for a sudo password. 
+Clone this repository  and execute the `start_demo_standalone.sh` script. It might ask for a sudo password. 
 
 ```sh
 git clone https://github.com/informationgrid/ingrid-docker.git
-./start_demo_nossl.sh
+./start_demo_standalone.sh
 ```
 
 Alternatively you can execute the steps manually (see below). The setup works on localhost or on a remote machine. If you're on a remote, you have to change the HOST-variable, see section *Change Host*. This setup may cause problems if you're on a mac, see section *Remarks for Mac Users*.
@@ -73,9 +72,6 @@ sed -i "s/ingrid.localhost/$HOST/g" \
   interface-search/descriptor.xml \
   interface-search/interface-search.properties \
   interface-csw/conf/config.override.properties \
-  iplug-sns/conf/config.override.properties \
-  portal/ingrid-portal-apps.override.properties \
-  portal/mdek.override.properties \
 ```
 
 If you're on mac, use:
@@ -89,9 +85,6 @@ sed -i "" "s/ingrid.localhost/$HOST/g" \
   interface-csw/conf/config.override.properties \
   iplug-se/conf/config.override.properties \
   iplug-se/conf/config.override.properties \
-  iplug-sns/conf/config.override.properties \
-  portal/ingrid-portal-apps.override.properties \
-  portal/mdek.override.properties \
 ```
 
 If you updated the host-setting afterwards, update your setup with:
@@ -105,9 +98,8 @@ sudo docker compose restart
 
 ## Remarks
 
-In this configuration the Editor and the Keycloak require to be called with http:// /and not https://)
 
-Some pages of the portal are secured via http-auth as defined in `./nginx/auth/passwdfile.ingrid` and in `.nginx/conf.d/default.conf.template`. The default logins are admin/admin and ingrid/ingrid. The logins for all iplugs are also admin/admin as default. Except the admin GUI for portal which is `Adm1nAdm1n`
+Some pages of the portal are secured via http-auth as defined in `./nginx/auth/passwdfile.ingrid` and in `.nginx/conf.d/default.conf.template`. The default logins are admin/admin and ingrid/ingrid. The logins for all iplugs are also admin/admin as default.
 
 The containers can be restarted at any time. Possible running indexing processes are automatically cleaned up. If you change the configuration of a service via the files in this repository, you have to restart the container to apply them.
 
