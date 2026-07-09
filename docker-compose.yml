@@ -25,7 +25,7 @@ services:
       - informationgrid-network
 
   postgres-db:
-    image: postgres:${POSTGRES_VERSION}
+    image: postgres:${POSTGRES_DB_VERSION}
     restart: unless-stopped
     environment:
       - POSTGRES_USER=${POSTGRES_DB_ADMIN}
@@ -80,7 +80,7 @@ services:
       - informationgrid-network
 
   elastic:
-    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTICSEARCH_VERSION}
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTIC_VERSION}
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -133,7 +133,7 @@ services:
   ##############################
 
   ingrid-codelist-repo:
-    image: docker-registry.wemove.com/ingrid-codelist-repository:${INGRID_BASE_VERSION}.${INGRID_PATCH_VERSION_0}
+    image: docker-registry.wemove.com/ingrid-codelist-repository:${INGRID_CODELIST_REPO_VERSION}
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -150,7 +150,7 @@ services:
       - informationgrid-network
 
   ingrid-ibus:
-    image: docker-registry.wemove.com/ingrid-ibus:${INGRID_BASE_VERSION}.${INGRID_PATCH_VERSION_0}
+    image: docker-registry.wemove.com/ingrid-ibus:${INGRID_IBUS_VERSION}
     depends_on:
       - elastic
     restart: unless-stopped
@@ -174,7 +174,7 @@ services:
       - informationgrid-network
 
   ingrid-editor:
-    image: docker-registry.wemove.com/ingrid-ige-ng:${INGRID_BASE_VERSION}.${INGRID_PATCH_VERSION_0}
+    image: docker-registry.wemove.com/ingrid-ige-ng:${INGRID_EDITOR_VERSION}
     restart: unless-stopped
     depends_on:
       - postgres-db
@@ -239,7 +239,7 @@ services:
       - ./ingrid-editor/codelists:/codelists
 
   ingrid-api:
-    image: docker-registry.wemove.com/ingrid-api:${INGRID_BASE_VERSION}.${INGRID_PATCH_VERSION_0}
+    image: docker-registry.wemove.com/ingrid-api:${INGRID_API_VERSION}
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -252,7 +252,7 @@ services:
       - informationgrid-network
 
   ingrid-portal:
-    image: docker-registry.wemove.com/ingrid-portal:${INGRID_BASE_VERSION}.${INGRID_PATCH_VERSION_0}
+    image: docker-registry.wemove.com/ingrid-portal:${INGRID_PORTAL_VERSION}
     restart: unless-stopped
     volumes:
       - grav:/var/www/portal
@@ -278,7 +278,7 @@ services:
       - informationgrid-network
 
   ingrid-mapclient:
-    image: docker-registry.wemove.com/ingrid-webmap-client:8.3.${INGRID_PATCH_VERSION_0}
+    image: docker-registry.wemove.com/ingrid-webmap-client:${INGRID_MAPCLIENT_VERSION}
     restart: unless-stopped
     volumes:
       - ./map/application.override.properties:/usr/local/tomcat/webapps/ingrid-webmap-client/WEB-INF/classes/application.override.properties
@@ -287,7 +287,7 @@ services:
       - informationgrid-network
 
   ingrid-harvester:
-    image: docker-registry.wemove.com/ingrid-harvester:${INGRID_BASE_VERSION}.${INGRID_PATCH_VERSION_0}
+    image: docker-registry.wemove.com/ingrid-harvester:${INGRID_HARVESTER_VERSION}
     restart: unless-stopped
     depends_on:
       - postgres-db
@@ -319,7 +319,7 @@ services:
       - informationgrid-network
 
   ingrid-interface-csw:
-    image: docker-registry.wemove.com/ingrid-interface-csw:${INGRID_BASE_VERSION}.${INGRID_PATCH_VERSION_0}
+    image: docker-registry.wemove.com/ingrid-interface-csw:${INGRID_INTERFACE_CSW_VERSION}
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -336,7 +336,7 @@ services:
       - informationgrid-network
 
   ingrid-interface-search:
-    image: docker-registry.wemove.com/ingrid-interface-search:${INGRID_BASE_VERSION}.${INGRID_PATCH_VERSION_0}
+    image: docker-registry.wemove.com/ingrid-interface-search:${INGRID_INTERFACE_SEARCH_VERSION}
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
