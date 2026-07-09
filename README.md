@@ -54,7 +54,7 @@ Modify the default configuration via the components' admin-guis. The urls for th
 * <https://ingrid.localhost/keycloak> : http login admin:admin
 * <https://ingrid.localhost/codelist-repo> : http login admin:admin
 * <https://ingrid.localhost/adminer> : http login admin:admin, postgres-db:postgres:postgres
-* <https://ingrid.localhost/ibus-gui/r> : http login admin:admin, ibus login admin:admin
+* <https://ingrid.localhost/ibus-gui/> : http login admin:admin, ibus login admin:admin
 * <https://ingrid.localhost/csw-admin/> : admin:admin
 * <https://ingrid.localhost/harvester/> : admin:admin
 
