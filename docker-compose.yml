@@ -309,8 +309,8 @@ services:
      - DB_NAME=harvester
      - DB_USER=${POSTGRES_DB_ADMIN}
      - DB_PASSWORD=${POSTGRES_DB_PASSWORD}
-     - KEYCLOAK_AUTH_SERVER_URL=http://${HOST:-ingrid.localhost}/keycloak
-     - KEYCLOAK_CREDENTIALS_SECRET=${HARVESTER_SECRET}
+     #- KEYCLOAK_AUTH_SERVER_URL=http://${HOST:-ingrid.localhost}/keycloak
+     #- KEYCLOAK_CREDENTIALS_SECRET=${HARVESTER_SECRET}
     volumes:
        - /etc/localtime:/etc/localtime:ro
        - ./harvester/config/config.json:/opt/ingrid/harvester/server/config.json
