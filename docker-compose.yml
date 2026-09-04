@@ -174,7 +174,8 @@ services:
       - informationgrid-network
 
   ingrid-editor:
-    image: docker-registry.wemove.com/ingrid-ige-ng:${INGRID_EDITOR_VERSION}
+    image: registry.opencode.de/informationgrid/ingrid-editor:${INGRID_EDITOR_VERSION}
+    #image: docker-registry.wemove.com/ingrid-ige-ng:${INGRID_EDITOR_VERSION}
     restart: unless-stopped
     depends_on:
       - postgres-db
