@@ -1,5 +1,5 @@
 ARG IGE_NG_VERSION
-FROM docker-registry.wemove.com/ingrid-ige-ng:$IGE_NG_VERSION AS midstage
+FROM registry.opencode.de/informationgrid/ingrid-editor:$IGE_NG_VERSION AS midstage
 COPY ./selfSignedCerts /certificates
 COPY ./importSelfSignedCert.sh /
 ARG CERT_FILE_NAME_1

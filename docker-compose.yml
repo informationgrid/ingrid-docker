@@ -133,7 +133,7 @@ services:
   ##############################
 
   ingrid-codelist-repo:
-    image: docker-registry.wemove.com/ingrid-codelist-repository:${INGRID_CODELIST_REPO_VERSION}
+    image: registry.opencode.de/informationgrid/ingrid-codelist-repository:${INGRID_CODELIST_REPO_VERSION}
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -150,7 +150,7 @@ services:
       - informationgrid-network
 
   ingrid-ibus:
-    image: docker-registry.wemove.com/ingrid-ibus:${INGRID_IBUS_VERSION}
+    image: registry.opencode.de/informationgrid/ingrid-ibus:${INGRID_IBUS_VERSION}
     depends_on:
       - elastic
     restart: unless-stopped
@@ -240,7 +240,7 @@ services:
       - ./ingrid-editor/codelists:/codelists
 
   ingrid-api:
-    image: docker-registry.wemove.com/ingrid-api:${INGRID_API_VERSION}
+    image: registry.opencode.de/informationgrid/ingrid-api:${INGRID_API_VERSION}
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -253,7 +253,7 @@ services:
       - informationgrid-network
 
   ingrid-portal:
-    image: docker-registry.wemove.com/ingrid-portal:${INGRID_PORTAL_VERSION}
+    image: registry.opencode.de/informationgrid/ingrid-portal:${INGRID_PORTAL_VERSION}
     restart: unless-stopped
     volumes:
       - grav:/var/www/portal
@@ -288,7 +288,7 @@ services:
       - informationgrid-network
 
   ingrid-harvester:
-    image: docker-registry.wemove.com/ingrid-harvester:${INGRID_HARVESTER_VERSION}
+    image: registry.opencode.de/informationgrid/ingrid-harvester:${INGRID_HARVESTER_VERSION}
     restart: unless-stopped
     depends_on:
       - postgres-db
@@ -320,7 +320,7 @@ services:
       - informationgrid-network
 
   ingrid-interface-csw:
-    image: docker-registry.wemove.com/ingrid-interface-csw:${INGRID_INTERFACE_CSW_VERSION}
+    image: registry.opencode.de/informationgrid/ingrid-interface-csw:${INGRID_INTERFACE_CSW_VERSION}
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
@@ -337,7 +337,7 @@ services:
       - informationgrid-network
 
   ingrid-interface-search:
-    image: docker-registry.wemove.com/ingrid-interface-search:${INGRID_INTERFACE_SEARCH_VERSION}
+    image: registry.opencode.de/informationgrid/ingrid-interface-search:${INGRID_INTERFACE_SEARCH_VERSION}
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
