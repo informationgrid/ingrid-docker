@@ -253,7 +253,8 @@ services:
       - informationgrid-network
 
   ingrid-portal:
-    image: registry.opencode.de/informationgrid/ingrid-portal:${INGRID_PORTAL_VERSION}
+    #image: registry.opencode.de/informationgrid/ingrid-portal:${INGRID_PORTAL_VERSION}
+    image: docker-registry.wemove.com/ingrid-portal:${INGRID_PORTAL_VERSION}
     restart: unless-stopped
     volumes:
       - grav:/var/www/portal
@@ -293,10 +294,7 @@ services:
     depends_on:
       - postgres-db
     environment:
-     - PASSPORT_ENABLED=true
-     - KEYCLOAK_ENABLED=false
      - NODE_ENV=production
-     #- BASE_URL=/harvester/
      - IMPORTER_PROFILE=ingrid
      - ADMIN_PASSWORD=admin
      - ELASTIC_URL=http://elastic:9200
@@ -314,8 +312,8 @@ services:
      #- KEYCLOAK_CREDENTIALS_SECRET=${HARVESTER_SECRET}
     volumes:
        - /etc/localtime:/etc/localtime:ro
-       - ./harvester/config/config.json:/opt/ingrid/harvester/server/config.json
-       - ./harvester/config/client_config.json:/opt/ingrid/harvester/server/app/webapp/assets/config.json
+       - ./harvester/config/config.json:/opt/ingrid/harvester/config.json
+       - ./harvester/config/client_config.json:/opt/ingrid/harvester/app/webapp/assets/config.json
     networks:
       - informationgrid-network
 
