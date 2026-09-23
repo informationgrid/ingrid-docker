@@ -2,6 +2,7 @@
   "url": "https://ingrid.localhost",
   "contextPath": "/harvester/",
   "version": "@@VERSION@@",
-  "keycloakEnabled": false
+  "keycloakEnabled": false,
+  "passportEnabled": true
 }
 
