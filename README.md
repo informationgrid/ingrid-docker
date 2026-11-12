@@ -20,9 +20,6 @@ cp .env.sample .env
 # 127.0.0.1       ingrid.localhost
 HOST=ingrid.localhost
 
-# copy initial sample webmapclient data
-cp -r portal/WebmapClientData.test/* _data/portal/WebmapClientData
-
 # create empty directory for Postgres Database
 mkdir ./_data/postgres-db
 
@@ -34,8 +31,7 @@ sudo chown -R 1000:1000 ./_data
 sysctl vm.max_map_count
 sudo sysctl -w vm.max_map_count=262144
 
-# The installation uses docker images from a non-public docker registry. You can also build your own images by following the instructions in the specific ingrid repositories.
-sudo docker login -u readonly -p readonly docker-registry.wemove.com > /dev/null # password "readonly"
+# The installation uses docker images from the opencode docker registry. An access token to opencode is required. You can also build your own images by following the instructions in the specific ingrid repositories. 
 sudo docker compose up -d
 sudo docker compose ps
 ```
@@ -50,11 +46,12 @@ Modify the default configuration via the components' admin-guis. The urls for th
 
 * <https://ingrid.localhost/admin>  : http login: admin:admin
 * <https://ingrid.localhost/ingrid-webmap-client/admin> : http login: admin:admin
-* <https://ingrid.localhost/editor> : http login ige:admin
+* <https://ingrid.localhost/editor> : http login ige:Un33dtwelve%
 * <https://ingrid.localhost/keycloak> : http login admin:admin
 * <https://ingrid.localhost/codelist-repo> : http login admin:admin
 * <https://ingrid.localhost/adminer> : http login admin:admin, postgres-db:postgres:postgres
-* <https://ingrid.localhost/ibus-gui/> : http login admin:admin, ibus login admin:admin
+* <https://ingrid.localhost/ibus-gui/> : http login admin:admin, ibus login admin:admin <= ibus is deprecated and will removed in the next release. It will partially replaced by ingrid-api
+* <https://ingrid.localhost/ingrid-api/> : ige:Un33dtwelve%
 * <https://ingrid.localhost/csw-admin/> : admin:admin
 * <https://ingrid.localhost/harvester/> : admin:admin
 
@@ -82,9 +79,6 @@ sed -i "" "s/ingrid.localhost/$HOST/g" \
   .env \
   interface-search/descriptor.xml \
   interface-search/interface-search.properties \
-  interface-csw/conf/config.override.properties \
-  iplug-se/conf/config.override.properties \
-  iplug-se/conf/config.override.properties \
 ```
 
 If you updated the host-setting afterwards, update your setup with:
@@ -117,7 +111,7 @@ This setup might work for Intel Macs. Currently we don't have active ingrid user
 
 Change property `POSTGRES_DB_PASSWORD` in file `.env`.
 
-Change property `iplug.database.password` in files `iplug-dsc/conf/config.override.properties` and environment variable of `ige-ng` and `keycloak`.
+Change property `iplug.database.password` in files `iplug-dsc/conf/config.override.properties` and environment variable of `ingrid-editor` and `keycloak`.
 
 ### Codelist
 
@@ -125,7 +119,6 @@ Change property `CODELIST_PASSWORD`  in file `.env`.
 
 Change line `admin: yourpassword,admin` in file `codelist-repository/realm.properties`.
 
-Change property `codelist.password` in file `portal/mdek.override.properties`.
 
 ### Admin GUI
 
@@ -145,7 +138,7 @@ Change property `ingrid.admin.password` in file `interface-csw\conf\config.overr
 
 ### Http Auth
 
-The admin-guis of phpmyadmin, ibus and ige are secured with http-auth. For the ibus and ige admin-gui this is redundant security. Choose a username and password. You can keep them for example in the file `.env`. Create the apr-hash of the password with the command:
+The admin-guis of adminer, ibus and csw-admin are secured with http-auth. For the ibus and ige admin-gui this is redundant security. Choose a username and password. You can keep them for example in the file `.env`. Create the apr-hash of the password with the command:
 
 ```sh
 openssl passwd -apr1 yourpassword
