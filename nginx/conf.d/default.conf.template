@@ -44,11 +44,19 @@ server {
     }
 
 
-    location /ibus-gui/ {
+    location /ibus-gui {
         auth_basic "Restricted Content";
         auth_basic_user_file /etc/nginx/auth/passwdfile.ingrid;
-        proxy_pass http://ingrid-ibus:8080/;
-        proxy_redirect http://$host/ http://$host/ibus-gui/;
+        proxy_pass http://ingrid-ibus:8080;
+        proxy_redirect http://$host http://$host;
+    }
+
+    # ingrid-api
+    location /ingrid-api {
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header Host $host;
+        proxy_pass http://ingrid-api:8080;
+        
     }
 
     location = /codelist-repo {
@@ -122,8 +130,8 @@ server {
 
     location / {
         #limit_req zone=one burst=5 delay=3;
-        auth_basic "Restricted Content";
-        auth_basic_user_file /etc/nginx/auth/passwdfile.ingrid;
+        #auth_basic "Restricted Content";
+        #auth_basic_user_file /etc/nginx/auth/passwdfile.ingrid;
 
         root /var/www/portal;
 

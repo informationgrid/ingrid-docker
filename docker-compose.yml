@@ -15,7 +15,7 @@ services:
       - ./nginx/auth:/etc/nginx/auth
       - ./nginx/conf.d:/etc/nginx/templates
       - ./nginx/ssl:/etc/nginx/ssl/
-      - ./ingrid-editor/upload:/tmp/ingrid/upload-ige-ng
+      - ./ingrid-editor/upload:/tmp/ingrid/upload-editor
       - grav:/var/www/portal
       - ./portal/user:/var/www/portal/user
     ports:
@@ -51,6 +51,8 @@ services:
       - postgres-db
     environment:
       - EDITOR_SECRET=${EDITOR_SECRET}
+      - INGRID_API_SECRET=${INGRID_API_SECRET}
+      - INGRID_API_URL=https://${HOST:-ingrid.localhost}/ingrid-api
       - KC_BOOTSTRAP_ADMIN_USERNAME=${KEYCLOAK_ADMIN}
       - KC_BOOTSTRAP_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
       - KC_HTTP_RELATIVE_PATH=/keycloak
@@ -61,6 +63,7 @@ services:
       - KC_DB_URL_HOST=postgres-db
       - KC_DB_USERNAME=${POSTGRES_DB_ADMIN}
       - KC_DB_PASSWORD=${POSTGRES_DB_PASSWORD}
+      - KC_HEALTH_ENABLED=true
       - MAIL_SMTP=mailrelay
       - MAIL_FROM=admin@wemove.com
       - EDITOR_URL=https://${HOST:-ingrid.localhost}/editor
@@ -149,6 +152,7 @@ services:
     networks:
       - informationgrid-network
 
+  # This component is deprecated and will removed in the next Minor release
   ingrid-ibus:
     image: registry.opencode.de/informationgrid/ingrid-ibus:${INGRID_IBUS_VERSION}
     depends_on:
@@ -159,11 +163,13 @@ services:
       - CODELIST_URL=http://ingrid-codelist-repo:8080
       - CODELIST_USERNAME=${CODELIST_ADMIN}
       - CODELIST_PASSWORD=${CODELIST_PASSWORD}
+      - IBUS_USER=${IBUS_GUI_ADMIN}
       - IBUS_PASSWORD=${IBUS_ADMIN_GUI_PASSWORD_HASH}
+      - SERVER_CONTEXT_PATH=/ibus-gui
+      - SESSION_COOKIE_PATH=/ibus-gui
       - ELASTIC_HOSTS=elastic:9200
     volumes:
       - ./_data/logs/ibus:/opt/ingrid/ingrid-ibus/logs
-      - ./ibus/conf/activatedIplugs.properties:/opt/ingrid/ingrid-ibus/conf/activatedIplugs.properties
     #ports:
     #  - 127.0.0.1:12300:9900
     deploy:
@@ -175,7 +181,6 @@ services:
 
   ingrid-editor:
     image: registry.opencode.de/informationgrid/ingrid-editor:${INGRID_EDITOR_VERSION}
-    #image: docker-registry.wemove.com/ingrid-ige-ng:${INGRID_EDITOR_VERSION}
     restart: unless-stopped
     depends_on:
       - postgres-db
@@ -239,6 +244,7 @@ services:
       - ./_data/ingrid-editor/upload:/tmp/ingrid/upload-ingrid-editor
       - ./ingrid-editor/codelists:/codelists
 
+  
   ingrid-api:
     image: registry.opencode.de/informationgrid/ingrid-api:${INGRID_API_VERSION}
     restart: unless-stopped
@@ -248,14 +254,19 @@ services:
       - ES_USERNAME=${ELASTIC_USER}
       - ES_PASSWORD=${ELASTIC_PASSWORD}
       - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,address=*:8476,server=y,suspend=n
+      - CONTEXT_PATH=/ingrid-api
+      - KEYCLOAK_CLIENT_SECRET=${INGRID_API_SECRET}
+      - KEYCLOAK_SERVER_URL=https://${HOST:-ingrid.localhost}/keycloak
+      - SESSION_SECURE=false
 
     networks:
       - informationgrid-network
 
   ingrid-portal:
-    #image: registry.opencode.de/informationgrid/ingrid-portal:${INGRID_PORTAL_VERSION}
-    image: docker-registry.wemove.com/ingrid-portal:${INGRID_PORTAL_VERSION}
+    image: registry.opencode.de/informationgrid/ingrid-portal:${INGRID_PORTAL_VERSION}
     restart: unless-stopped
+    depends_on:
+      - ingrid-api
     volumes:
       - grav:/var/www/portal
       - ./_data/logs/portal:/var/www/portal/logs
@@ -283,8 +294,8 @@ services:
     image: docker-registry.wemove.com/ingrid-webmap-client:${INGRID_MAPCLIENT_VERSION}
     restart: unless-stopped
     volumes:
-      - ./map/application.override.properties:/usr/local/tomcat/webapps/ingrid-webmap-client/WEB-INF/classes/application.override.properties
-      - ./map/WebmapClientData:/opt/ingrid/WebmapClientData
+      - ./mapclient/application.override.properties:/usr/local/tomcat/webapps/ingrid-webmap-client/WEB-INF/classes/application.override.properties
+      - ./_data/mapclient/WebmapClientData:/opt/ingrid/WebmapClientData
     networks:
       - informationgrid-network
 
@@ -316,7 +327,8 @@ services:
        - ./harvester/config/client_config.json:/opt/ingrid/harvester/app/webapp/assets/config.json
     networks:
       - informationgrid-network
-
+  
+  # This component is deprecated and will removed in the next Minor release
   ingrid-interface-csw:
     image: registry.opencode.de/informationgrid/ingrid-interface-csw:${INGRID_INTERFACE_CSW_VERSION}
     restart: unless-stopped
