@@ -273,7 +273,7 @@ services:
       - ./portal/user/:/var/www/portal/user/
     environment:
       - GRAV_FOLDER=portal
-      - INGRID_API=http://ingrid-api:8080/
+      - INGRID_API=http://ingrid-api:8080/ingrid-api/
       - CODELIST_API=http://ingrid-codelist-repo:8080/rest/getCodelists
       - CODELIST_USER=admin
       - CODELIST_PASS=admin
