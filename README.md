@@ -69,16 +69,7 @@ sed -i "s/ingrid.localhost/$HOST/g" \
   interface-search/descriptor.xml \
   interface-search/interface-search.properties \
   interface-csw/conf/config.override.properties \
-```
-
-If you're on mac, use:
-
-```sh
-HOST=your.domain.name
-sed -i "" "s/ingrid.localhost/$HOST/g" \
-  .env \
-  interface-search/descriptor.xml \
-  interface-search/interface-search.properties \
+  harvester/config/client_config.json 
 ```
 
 If you updated the host-setting afterwards, update your setup with:
