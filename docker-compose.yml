@@ -91,7 +91,7 @@ services:
       - http.host=0.0.0.0
       - transport.host=0.0.0.0
       - http.cors.enabled=true
-      - "ES_JAVA_OPTS=-Xmx4g -Dlog4j2.formatMsgNoLookups=true"
+      - "ES_JAVA_OPTS=-Xmx2g -Dlog4j2.formatMsgNoLookups=true"
       - "LOG4J_FORMAT_MSG_NO_LOOKUPS=true"
       - xpack.security.enabled=false
       - xpack.ml.enabled=false
@@ -110,7 +110,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1024M
+          memory: 4048M
     networks:
       - informationgrid-network
 
