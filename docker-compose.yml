@@ -1,5 +1,5 @@
 services:
-  
+
   ##############################
   ##### InGrid Components ######
   ##############################
@@ -20,7 +20,7 @@ services:
       - ./portal/user:/var/www/portal/user
     ports:
       - 80:80
-      - 443:443
+      - 1443:1443
     networks:
       - informationgrid-network
 
@@ -33,6 +33,8 @@ services:
     volumes:
       - ./_data/postgres-db/:/var/lib/postgresql/data
       - ./_data/init-db:/docker-entrypoint-initdb.d
+    ports:
+      - 5432:5432
     networks:
       - informationgrid-network
 
@@ -91,7 +93,7 @@ services:
       - http.host=0.0.0.0
       - transport.host=0.0.0.0
       - http.cors.enabled=true
-      - "ES_JAVA_OPTS=-Xmx4g -Dlog4j2.formatMsgNoLookups=true"
+      - "ES_JAVA_OPTS=-Xmx2g -Dlog4j2.formatMsgNoLookups=true"
       - "LOG4J_FORMAT_MSG_NO_LOOKUPS=true"
       - xpack.security.enabled=false
       - xpack.ml.enabled=false
@@ -106,11 +108,25 @@ services:
       # chown 1000 elastic/_data/esdata
     volumes:
       - ./_data/elasticsearch_data:/usr/share/elasticsearch/data
-
     deploy:
       resources:
         limits:
-          memory: 1024M
+          memory: 4096M
+    ports:
+      - 9200:9200
+    networks:
+      - informationgrid-network
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:${ELASTIC_VERSION}
+    restart: unless-stopped 
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elastic:9200
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD}
+      - SERVER_BASEPATH=/kibana
+      - SERVER_REWRITEBASEPATH=true
+      - SERVER_PUBLICBASEURL=https://${HOST:-ingrid.localhost}/kibana
     networks:
       - informationgrid-network
 
@@ -154,6 +170,8 @@ services:
 
   # This component is deprecated and will removed in the next Minor release
   ingrid-ibus:
+    profiles:
+      - ibus
     image: registry.opencode.de/informationgrid/ingrid-ibus:${INGRID_IBUS_VERSION}
     depends_on:
       - elastic
@@ -244,7 +262,7 @@ services:
       - ./_data/ingrid-editor/upload:/tmp/ingrid/upload-ingrid-editor
       - ./ingrid-editor/codelists:/codelists
 
-  
+
   ingrid-api:
     image: registry.opencode.de/informationgrid/ingrid-api:${INGRID_API_VERSION}
     restart: unless-stopped
@@ -257,6 +275,7 @@ services:
       - CONTEXT_PATH=/ingrid-api
       - KEYCLOAK_CLIENT_SECRET=${INGRID_API_SECRET}
       - KEYCLOAK_SERVER_URL=https://${HOST:-ingrid.localhost}/keycloak
+      - KEYCLOAK_INTERNAL_SERVER_URL=http://keycloak:8080/keycloak
       - SESSION_SECURE=false
 
     networks:
@@ -277,6 +296,7 @@ services:
       - CODELIST_API=http://ingrid-codelist-repo:8080/rest/getCodelists
       - CODELIST_USER=admin
       - CODELIST_PASS=admin
+      - CSW_URL=https://${HOST}/pycsw/csw?REQUEST=GetRecordById&SERVICE=CSW&VERSION=2.0.2&id=5482a829-34a6-4707-b8ed-787a6b34eca4&elementSetName=full&outputSchema=http://www.isotc211.org/2005/gmd&id=
       - MARKDOWN_AUTO_LINE_BREAKS=true
       - THEME_COPY_PAGES_INIT=true
       - ENABLE_SCHEDULER_RSS=false
@@ -309,27 +329,53 @@ services:
      - IMPORTER_PROFILE=ingrid
      - ADMIN_PASSWORD=admin
      - ELASTIC_URL=http://elastic:9200
-     - ELASTIC_VERSION=8
+     - ELASTIC_VERSION=9
      - ELASTIC_USER=${ELASTIC_USER}
      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
      - ELASTIC_ALIAS=harvester-alias
-     - ELASTIC_PREFIX=harvester_
+#     - ELASTIC_PREFIX=harvester_
      - DB_URL=postgres-db
      - DB_PORT=5432
      - DB_NAME=harvester
      - DB_USER=${POSTGRES_DB_ADMIN}
      - DB_PASSWORD=${POSTGRES_DB_PASSWORD}
-     #- KEYCLOAK_AUTH_SERVER_URL=http://${HOST:-ingrid.localhost}/keycloak
-     #- KEYCLOAK_CREDENTIALS_SECRET=${HARVESTER_SECRET}
+     - KEYCLOAK_AUTH_SERVER_URL=http://${HOST:-ingrid.localhost}/keycloak
+     - KEYCLOAK_CREDENTIALS_SECRET=${HARVESTER_SECRET}
     volumes:
        - /etc/localtime:/etc/localtime:ro
        - ./harvester/config/config.json:/opt/ingrid/harvester/config.json
+       - ./harvester/config/config-catalogs.json:/opt/ingrid/harvester/config-catalogs.json
        - ./harvester/config/client_config.json:/opt/ingrid/harvester/app/webapp/assets/config.json
     networks:
       - informationgrid-network
-  
+
+
+  pycsw:
+    image: geopython/pycsw:latest
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Berlin
+      #- PYCSW_SERVER_URL=https://${HOST}/pycsw
+      - PYCSW_SERVER_URL=http://pycsw:8000
+      - PYCSW_CONFIG=/etc/pycsw/pycsw.yml
+    depends_on:
+      - postgres-db
+    volumes:
+      - ./pycsw/pycsw.yml:/etc/pycsw/pycsw.yml
+      - ./pycsw/traceability-filter.xsl:/etc/pycsw/traceability-filter.xsl
+    deploy:
+      resources:
+        limits:
+          memory: 2048m
+    ports:
+      - 8000:8000
+    networks:
+      - informationgrid-network
+
   # This component is deprecated and will removed in the next Minor release
   ingrid-interface-csw:
+    profiles:
+      - csw-old
     image: registry.opencode.de/informationgrid/ingrid-interface-csw:${INGRID_INTERFACE_CSW_VERSION}
     restart: unless-stopped
     environment:
@@ -347,6 +393,8 @@ services:
       - informationgrid-network
 
   ingrid-interface-search:
+    profiles:
+      - search-old
     image: registry.opencode.de/informationgrid/ingrid-interface-search:${INGRID_INTERFACE_SEARCH_VERSION}
     restart: unless-stopped
     environment:

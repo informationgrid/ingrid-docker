@@ -1,22 +1,29 @@
 server {
-    server_name ingrid.localhost;
+    server_name localhost; 
     client_max_body_size 500M;
+
+    resolver 127.0.0.11 valid=60s;
 
     rewrite_log on;
 
     #listen 80 default_server;
     #listen [::]:80 default_server;
 
-    listen 443 ssl;
+    listen 1443 ssl;
     server_name ingrid.localhost 127.0.0.1;
 
     ssl_certificate     /etc/nginx/ssl/dummy.crt;
     ssl_certificate_key /etc/nginx/ssl/dummy.key;
 
 
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_set_header X-Forwarded-Port $server_port;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 
-    proxy_set_header X-Forwarded-Proto http;
-    proxy_set_header Host ingrid.localhost;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "Upgrade";
+    proxy_set_header Host $host;
 
     proxy_read_timeout 18000;
     proxy_connect_timeout 18000;
@@ -36,6 +43,13 @@ server {
         proxy_redirect http://$host/ http://$host/adminer/;
     }
 
+    location /kibana {
+        auth_basic "Restricted Content";
+        auth_basic_user_file /etc/nginx/auth/passwdfile.ingrid;
+
+        proxy_pass http://kibana:5601;
+    }
+
     location /ingrid-webmap-client/ {
         auth_basic "Restricted Content";
         auth_basic_user_file /etc/nginx/auth/passwdfile.ingrid;
@@ -44,19 +58,23 @@ server {
     }
 
 
-    location /ibus-gui {
-        auth_basic "Restricted Content";
-        auth_basic_user_file /etc/nginx/auth/passwdfile.ingrid;
-        proxy_pass http://ingrid-ibus:8080;
-        proxy_redirect http://$host http://$host;
-    }
+    #location /ibus-gui {
+    #    auth_basic "Restricted Content";
+    #    auth_basic_user_file /etc/nginx/auth/passwdfile.ingrid;
+    #    proxy_pass http://ingrid-ibus:8080;
+    #    proxy_redirect http://$host http://$host;
+    #}
 
     # ingrid-api
     location /ingrid-api {
-        proxy_set_header X-Forwarded-Proto https;
-        proxy_set_header Host $host;
         proxy_pass http://ingrid-api:8080;
         
+    }
+
+    location /pycsw/ {
+        set $upstream_pycsw http://pycsw:8000;
+        rewrite ^/pycsw/(.*)$ /$1 break;
+        proxy_pass $upstream_pycsw;
     }
 
     location = /codelist-repo {
@@ -67,60 +85,43 @@ server {
         proxy_redirect http://$host/ http://$host/codelist-repo/;
     }
 
-    location /interface-opensearch/ {
-        proxy_pass http://ingrid-interface-search:8080/opensearch/;
-        proxy_redirect http://$host/opensearch/ http://$host/interface-search/;
-    }
+    #location /interface-opensearch/ {
+    #    proxy_pass http://ingrid-interface-search:8080/opensearch/;
+    #    proxy_redirect http://$host/opensearch/ http://$host/interface-search/;
+    #}
    
     location = /harvester {
         return 301 /harvester/;
     }
 
     location /harvester/ {
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        auth_basic "Restricted Content";
-        auth_basic_user_file /etc/nginx/auth/passwdfile.ingrid;
         proxy_pass http://ingrid-harvester:8090/;
         proxy_redirect http://$host/ http://$host/harvester/;
     }
 
-    location /csw-admin/ {
-        auth_basic "Restricted Content";
-        auth_basic_user_file /etc/nginx/auth/passwdfile.ingrid;
-        proxy_pass http://ingrid-interface-csw:8080/;
-        proxy_redirect http://$host/ http://$host/csw-admin/;
-        proxy_redirect http://$host:80/ http://$host/csw-admin/;
+    #location /csw-admin/ {
+    #    auth_basic "Restricted Content";
+    #    auth_basic_user_file /etc/nginx/auth/passwdfile.ingrid;
+    #    proxy_pass http://ingrid-interface-csw:8080/;
+    #    proxy_redirect http://$host/ http://$host/csw-admin/;
+    #    proxy_redirect http://$host:80/ http://$host/csw-admin/;
+    #}
+
+    #location /csw {
+    #    proxy_pass http://ingrid-interface-csw:8080/csw;
+    #    proxy_redirect http://$host/csw http://$host/csw;
+    #}
+
+    location = /editor {
+        return 301 https://$http_host$uri/;
     }
-
-    location /csw {
-        proxy_pass http://ingrid-interface-csw:8080/csw;
-        proxy_redirect http://$host/csw http://$host/csw;
-    }
-
-    location /editor {
-
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "Upgrade";
-        proxy_set_header Host $host;
-
-        proxy_set_header X-Forwarded-Host $host:$server_port;
-        proxy_set_header X-Forwarded-Server $host;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    location /editor/ {
         proxy_pass http://ingrid-editor;
-        proxy_redirect default;
-
     }
 
 
     location /keycloak {
         proxy_pass http://keycloak:8080;
-        proxy_redirect default;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        #proxy_set_header X-Forwarded-Proto https;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_buffers 8 8k;
         proxy_buffer_size 8k;
         proxy_busy_buffers_size 16k;

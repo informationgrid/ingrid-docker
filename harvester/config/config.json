@@ -1,1 +1,65 @@
-[]
+[
+  {
+    "type": "CSW",
+    "maxRecords": 100,
+    "startPosition": 1,
+    "catalogIds": [
+      1,
+      2
+    ],
+    "rules": {
+      "containsDocumentsWithData": false
+    },
+    "maxConcurrent": 4,
+    "skipUrlCheckOnHarvest": false,
+    "timeout": 60000,
+    "sourceURL": "https://gdk.gdi-de.org/gdi-de/srv/ger/csw",
+    "maxServices": 30,
+    "resolveOgcDistributions": false,
+    "harvestingMode": "standard",
+    "eitherKeywords": [],
+    "httpMethod": "POST",
+    "resultType": "results",
+    "simplifyTolerance": 0,
+    "id": 1,
+    "description": "GDI-DE",
+    "iPlugId": "harvester-gdi-de",
+    "partner": "bund",
+    "provider": "gdi-de",
+    "dataSourceName": "Harvester",
+    "datatype": "default,dsc_csw,csw,metadata,IDF_1.0",
+    "recordFilter": "<ogc:Filter>\n      <ogc:PropertyIsEqualTo>\n          <ogc:PropertyName>apiso:subject</ogc:PropertyName>\n          <ogc:Literal>environment</ogc:Literal>\n      </ogc:PropertyIsEqualTo>\n</ogc:Filter>"
+  },
+  {
+    "type": "CKAN",
+    "maxRecords": 100,
+    "startPosition": 1,
+    "catalogIds": [
+      3
+    ],
+    "rules": {
+      "containsDocumentsWithData": false
+    },
+    "maxConcurrent": 1,
+    "skipUrlCheckOnHarvest": false,
+    "timeout": 60000,
+    "sourceURL": "https://ckan.govdata.de",
+    "filterTags": [],
+    "filterGroups": [],
+    "providerPrefix": "",
+    "providerField": "organization",
+    "dateSourceFormats": [],
+    "requestType": "Search",
+    "markdownAsDescription": true,
+    "groupChilds": false,
+    "defaultLicense": null,
+    "id": 2,
+    "description": "GOVDATA",
+    "iPlugId": "harvester-govdata",
+    "partner": "bund",
+    "provider": "govdata",
+    "dataSourceName": "Harvester",
+    "datatype": "default,metadata,IDF_1.0,opendata,research",
+    "additionalSearchFilter": "organization:umweltbundesamt"
+  }
+]

@@ -1,5 +1,5 @@
 {
-  "url": "https://ingrid.localhost",
+  "url": "https://localhost:1443",
   "contextPath": "/harvester/",
   "version": "@@VERSION@@",
   "keycloakEnabled": false,

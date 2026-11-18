@@ -4,3 +4,14 @@
 # intellij
 .idea/
 venv
+
+# data directories/files
+_data/elasticsearch_data/_state/
+_data/elasticsearch_data/indices/
+_data/elasticsearch_data/node.lock
+_data/elasticsearch_data/nodes
+_data/elasticsearch_data/snapshot_cache/
+_data/logs/portal/
+_data/mapclient/
+portal/user
+ingrid-editor/codelists
