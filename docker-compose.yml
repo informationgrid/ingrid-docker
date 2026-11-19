@@ -31,7 +31,7 @@ services:
       - POSTGRES_USER=${POSTGRES_DB_ADMIN}
       - POSTGRES_PASSWORD=${POSTGRES_DB_PASSWORD}
     volumes:
-      - ./_data/postgres-db/:/var/lib/postgresql/data
+      - ./postgres-db/:/var/lib/postgresql/data
       - ./_data/init-db:/docker-entrypoint-initdb.d
     ports:
       - 5432:5432
@@ -288,11 +288,11 @@ services:
       - ingrid-api
     volumes:
       - grav:/var/www/portal
-      - ./_data/logs/portal:/var/www/portal/logs
+      - ./logs/portal:/var/www/portal/logs
       - ./portal/user/:/var/www/portal/user/
     environment:
       - GRAV_FOLDER=portal
-      - INGRID_API=http://ingrid-api:8080/
+      - INGRID_API=http://ingrid-api:8080/ingrid-api/
       - CODELIST_API=http://ingrid-codelist-repo:8080/rest/getCodelists
       - CODELIST_USER=admin
       - CODELIST_PASS=admin

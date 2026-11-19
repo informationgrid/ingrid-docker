@@ -11,7 +11,8 @@ _data/elasticsearch_data/indices/
 _data/elasticsearch_data/node.lock
 _data/elasticsearch_data/nodes
 _data/elasticsearch_data/snapshot_cache/
-_data/logs/portal/
+logs/portal/
+postgres-db/
 _data/mapclient/
 portal/user
 ingrid-editor/codelists

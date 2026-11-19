@@ -28,9 +28,9 @@ cp .env.sample .env
 printf "Set Host to ingrid.localhost.\n"
 export HOST=ingrid.localhost
 
-printf "Create database folder.\n"
-
-mkdir -p _data/postgres-db
+# database must not have owner 1000 -> let it create by docker
+#printf "Create database folder.\n"
+#mkdir -p _data/postgres-db
 
 printf "Set permissions for default user.\n"
 run_sudo chown -R 1000:1000 ./_data
@@ -54,6 +54,6 @@ run_sudo docker login -u readonly -p readonly docker-registry.wemove.com &> /dev
 run_sudo docker compose up -d
 
 printf "First time boot requires around 60 seconds to be ready.\n\n\n"
-sleep 60
-run_sudo docker compose ps
-exit 0
+#sleep 60
+#run_sudo docker compose ps
+#exit 0
