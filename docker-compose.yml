@@ -207,7 +207,7 @@ services:
       - TZ=Europe/Berlin
       - CONTEXT_PATH=/editor
       - BROKER_URL=wss://${HOST:-ingrid.localhost}/editor/ws
-      - _JAVA_OPTIONS=-Xmx2g -Dstorage.diskCache.bufferSize=256 -Dspring.profiles.active=elasticsearch,ingrid,ibus,codelist-repo
+      - _JAVA_OPTIONS=-Xmx2g -Dstorage.diskCache.bufferSize=256 -Dspring.profiles.active=codelist-repo,ingrid,opendata,ingrid-with-opendata
       #- JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8699
       #- KEYCLOAK_CLIENT_ID=ige-ng-backend
       - DATABASE_HOST=postgres-db
@@ -259,7 +259,7 @@ services:
     networks:
       - informationgrid-network
     volumes:
-      - ./_data/ingrid-editor/upload:/tmp/ingrid/upload-ingrid-editor
+      - ./_data/ingrid-editor/upload:/tmp/ingrid/upload
       - ./ingrid-editor/codelists:/codelists
 
 
