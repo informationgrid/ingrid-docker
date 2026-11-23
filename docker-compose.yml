@@ -168,35 +168,6 @@ services:
     networks:
       - informationgrid-network
 
-  # This component is deprecated and will removed in the next Minor release
-  ingrid-ibus:
-    profiles:
-      - ibus
-    image: registry.opencode.de/informationgrid/ingrid-ibus:${INGRID_IBUS_VERSION}
-    depends_on:
-      - elastic
-    restart: unless-stopped
-    environment:
-      - TZ=Europe/Berlin
-      - CODELIST_URL=http://ingrid-codelist-repo:8080
-      - CODELIST_USERNAME=${CODELIST_ADMIN}
-      - CODELIST_PASSWORD=${CODELIST_PASSWORD}
-      - IBUS_USER=${IBUS_GUI_ADMIN}
-      - IBUS_PASSWORD=${IBUS_ADMIN_GUI_PASSWORD_HASH}
-      - SERVER_CONTEXT_PATH=/ibus-gui
-      - SESSION_COOKIE_PATH=/ibus-gui
-      - ELASTIC_HOSTS=elastic:9200
-    volumes:
-      - ./_data/logs/ibus:/opt/ingrid/ingrid-ibus/logs
-    #ports:
-    #  - 127.0.0.1:12300:9900
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-    networks:
-      - informationgrid-network
-
   ingrid-editor:
     image: registry.opencode.de/informationgrid/ingrid-editor:${INGRID_EDITOR_VERSION}
     restart: unless-stopped
@@ -372,44 +343,6 @@ services:
     networks:
       - informationgrid-network
 
-  # This component is deprecated and will removed in the next Minor release
-  ingrid-interface-csw:
-    profiles:
-      - csw-old
-    image: registry.opencode.de/informationgrid/ingrid-interface-csw:${INGRID_INTERFACE_CSW_VERSION}
-    restart: unless-stopped
-    environment:
-      - TZ=Europe/Berlin
-    volumes:
-      - ./_data/logs/interface-csw:/opt/ingrid/ingrid-interface-csw/logs
-      - ./_data/interface-csw/instances:/opt/ingrid/ingrid-interface-csw/instances
-      - ./interface-csw/conf/config.override.properties:/opt/ingrid/ingrid-interface-csw/conf/config.override.properties
-      - ./interface-csw/conf/csw-t.realm.properties:/opt/ingrid/ingrid-interface-csw/conf/csw-t.realm.properties
-    deploy:
-      resources:
-        limits:
-          memory: 384M
-    networks:
-      - informationgrid-network
-
-  ingrid-interface-search:
-    profiles:
-      - search-old
-    image: registry.opencode.de/informationgrid/ingrid-interface-search:${INGRID_INTERFACE_SEARCH_VERSION}
-    restart: unless-stopped
-    environment:
-      - TZ=Europe/Berlin
-    volumes:
-      - ./_data/logs/interface-search:/opt/ingrid/ingrid-interface-search/logs
-      - ./interface-search/interface-search.properties:/opt/ingrid/ingrid-interface-search/conf/interface-search.properties
-      - ./interface-search/descriptor.xml:/opt/ingrid/ingrid-interface-search/conf/descriptor.xml
-      - ./interface-search/communication.xml:/opt/ingrid/ingrid-interface-search/conf/communication.xml
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-    networks:
-      - informationgrid-network
 volumes:
   grav:
 
