@@ -59,7 +59,7 @@
     "partner": "bund",
     "provider": "govdata",
     "dataSourceName": "Harvester",
-    "datatype": "default,metadata,IDF_1.0,opendata,research",
+    "datatype": "default,metadata,opendata,research",
     "additionalSearchFilter": "organization:umweltbundesamt"
   }
 ]
